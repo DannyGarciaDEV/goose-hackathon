@@ -30,6 +30,10 @@ cp frontend/quiz.html dist/quiz.html
 echo "🧹 Cleaning up dependencies..."
 rm -f dist/requirements.txt
 
+# Clean up any dataset that might have been copied to netlify/functions
+echo "🧹 Cleaning up netlify/functions directory..."
+rm -rf netlify/functions/asl_dataset
+
 echo "✅ Build complete!"
 echo "📁 Files ready in dist/ directory"
 echo "📁 ASL dataset copied to root for functions"

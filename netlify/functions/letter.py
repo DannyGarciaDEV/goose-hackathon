@@ -46,6 +46,12 @@ def handler(event, context):
         print(f"Looking for dataset at: {dataset_path}")
         print(f"Dataset exists: {dataset_path.exists()}")
         
+        if not dataset_path.exists():
+            # List what's in the current directory
+            import os
+            print(f"Current directory contents: {os.listdir('.')}")
+            print(f"Root directory contents: {os.listdir('/')}")
+        
         letter_path = dataset_path / letter
         
         if not letter_path.exists():
