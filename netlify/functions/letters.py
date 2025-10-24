@@ -1,6 +1,19 @@
 import json
 import os
-from pathlib import Path
+try:
+    from pathlib import Path
+except ImportError:
+    # Fallback for older Python versions
+    import os.path as pathlib
+    class Path:
+        def __init__(self, path):
+            self.path = path
+        def exists(self):
+            return os.path.exists(self.path)
+        def iterdir(self):
+            return [Path(os.path.join(self.path, f)) for f in os.listdir(self.path) if os.path.isdir(os.path.join(self.path, f))]
+        def __str__(self):
+            return self.path
 
 def handler(event, context):
     """Netlify function to get available ASL letters"""
