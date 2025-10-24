@@ -1,173 +1,134 @@
-# ASL Learning Assistant 🤟
+# 🤟 ASL Learning App
 
-A modern, interactive web application for learning American Sign Language (ASL) with voice commands and automatic progression.
+A React-based American Sign Language learning application with voice recognition capabilities.
 
-## Features ✨
+## Features
 
-- **🎤 Voice Commands**: Navigate through letters using natural speech
-- **🎯 Interactive Learning**: Click letters or use voice commands
+- **🎤 Voice Recognition**: Control the app entirely with your voice
+- **📚 Learning Mode**: Learn ASL letters with visual examples
+- **🎯 Quiz Mode**: Test your ASL knowledge
 - **📱 Responsive Design**: Works on desktop, tablet, and mobile
+- **🔄 Real-time Updates**: Smooth React state management
 
+## Voice Commands
 
-## Quick Start 🚀
+### Learning Mode
+- Say **"next"** → Next letter
+- Say **"previous"** → Previous letter  
+- Say **"random"** → Random letter
+- Say **"repeat"** → Show current letter again
+- Say **"quiz"** → Go to quiz mode
+- Say **"A"**, **"B"**, **"C"**, etc. → Jump to letter
 
-### Option 1: Automatic Startup (Recommended)
+### Quiz Mode
+- Say **"start quiz"** → Begin quiz
+- Say **"next"** → Next question
+- Say **"learning"** → Back to learning mode
+- Say any letter → Answer the quiz
+
+### General Commands
+- Say **"hide commands"** → Hide voice panel
+- Say **"show commands"** → Show voice panel
+- Say **"stop voice"** → Deactivate voice
+- Say **"start voice"** → Activate voice
+
+## Getting Started
+
+### Prerequisites
+- Node.js (version 14 or higher)
+- npm or yarn
+- A modern browser with microphone access (Chrome recommended)
+
+### Installation
+
+1. Clone the repository:
 ```bash
-# On macOS/Linux:
-./start.sh
-
-# On Windows:
-start.bat
+git clone <repository-url>
+cd asl_learning_app
 ```
 
-### Option 2: Manual Startup
+2. Install dependencies:
 ```bash
-# 1. Install dependencies
-pip install -r requirements.txt
-
-# 2. Start the backend server
-cd backend
-python app.py
-
-# 3. Open your browser to:
-http://localhost:9000
+npm install
 ```
 
-## Voice Commands 🎤
+3. Start the development server:
+```bash
+npm start
+```
 
-The app responds to these voice commands:
+4. Open your browser and navigate to `http://localhost:3000`
 
-### Navigation
-- **"Next"** or **"Next letter"** - Move to the next letter
-- **"Previous"** or **"Back"** - Move to the previous letter
-- **"Repeat"** or **"Again"** - Show the current letter again
-- **"Random"** - Show a random letter
+5. Allow microphone access when prompted
 
-### Direct Access
-- **"A"**, **"B"**, **"C"**, etc. - Jump directly to any letter
-- **"Go to A"** - Navigate to a specific letter
-- **"Show me B"** - Display a specific letter
+## Usage
 
-## Learning Modes 📚
+1. **Allow Microphone Access**: The app will request microphone permission for voice recognition
+2. **Voice Recognition**: The app auto-starts voice recognition after loading
+3. **Learning**: Say letters or navigation commands to learn ASL signs
+4. **Quiz**: Say "quiz" to test your knowledge
+5. **Voice Panel**: Use the floating voice commands panel for reference
 
-### Auto Mode (Default)
-- Letters advance automatically every 5 seconds
-- Perfect for continuous learning
-- Toggle on/off with the button in the header
+## Browser Compatibility
 
-### Manual Mode
-- Use voice commands or click buttons to navigate
-- Take your time with each letter
-- Practice at your own pace
+- **Chrome**: Full support (recommended)
+- **Edge**: Full support
+- **Firefox**: Limited voice recognition support
+- **Safari**: Limited voice recognition support
 
-## How It Works 🔧
-
-1. **Backend Server**: Flask API serves ASL images and processes voice commands
-2. **Frontend Interface**: React-based web app with voice recognition
-3. **Dataset Integration**: Uses your `asl_dataset` directory with letter images
-4. **Camera Feed**: Optional webcam integration for gesture practice
-
-## File Structure 📁
+## Project Structure
 
 ```
 asl_learning_app/
-├── asl_dataset/           # Your ASL letter images
-│   ├── a/                # Letter A images
-│   ├── b/                # Letter B images
-│   └── ...               # Other letters
-├── backend/
-│   └── app.py            # Flask API server
-├── frontend/
-│   └── index.html        # Web interface
-├── start_app.py          # Python startup script
-├── start.sh              # Unix/Linux startup script
-├── start.bat             # Windows startup script
-├── requirements.txt      # Python dependencies
-└── README.md            # This file
+├── public/
+│   ├── index.html
+│   └── asl_dataset/          # ASL sign images
+├── src/
+│   ├── App.js               # Main React component
+│   ├── App.css              # Styles
+│   └── index.js             # React entry point
+├── package.json
+└── README.md
 ```
 
-## Requirements 📋
+## Technologies Used
 
-- Python 3.7+
-- Webcam (optional, for gesture practice)
-- Microphone (for voice commands)
-- Modern web browser with speech recognition support
+- **React 18**: Modern React with hooks
+- **Web Speech API**: Browser voice recognition
+- **CSS3**: Modern styling with gradients and animations
+- **HTML5**: Semantic markup
 
-## Troubleshooting 🔧
+## Development
 
-### Common Issues
+### Available Scripts
 
-**"Microphone access denied"**
-- Allow microphone permissions in your browser
-- Check browser settings for site permissions
+- `npm start`: Start development server
+- `npm run build`: Build for production
+- `npm test`: Run tests
+- `npm run eject`: Eject from Create React App
 
-**"Webcam access denied"**
-- Allow camera permissions in your browser
-- The app will still work without camera
+### Building for Production
 
-**"Speech recognition not supported"**
-- Use Chrome, Edge, or Safari for best voice support
-- Firefox has limited speech recognition
+```bash
+npm run build
+```
 
-**"Backend server not starting"**
-- Check if port 3000 is available
-- Run `pip install -r requirements.txt`
-- Ensure all dependencies are installed
+This creates a `build` folder with optimized production files.
 
-### Dataset Issues
+## Contributing
 
-**"ASL dataset not found"**
-- Ensure `asl_dataset` directory exists
-- Check that letter subdirectories (a, b, c, etc.) contain images
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
-**"No images found for letter"**
-- Verify image files are in correct format (.jpg, .jpeg, .png)
-- Check file permissions
-
-## Browser Compatibility 🌐
-
-### Fully Supported
-- Chrome 25+
-- Edge 79+
-- Safari 14.1+
-
-### Limited Support
-- Firefox (no speech recognition)
-- Older browsers
-
-## Learning Tips 💡
-
-1. **Start with Auto Mode**: Let letters advance automatically to get familiar
-2. **Use Voice Commands**: Practice speaking clearly and naturally
-3. **Practice Each Sign**: Take time to match the reference images
-4. **Use "Repeat"**: Don't hesitate to see a letter again
-5. **Try "Random"**: Mix up the order for better retention
-
-## Development 🛠️
-
-### Adding New Features
-- Backend API endpoints in `backend/app.py`
-- Frontend components in `frontend/index.html`
-- Voice commands processed in the React app
-
-### Customizing
-- Modify voice command recognition in the frontend
-- Add new API endpoints in the backend
-- Customize the UI styling and layout
-
-## Support 💬
-
-If you encounter issues:
-1. Check the browser console for errors
-2. Verify all requirements are installed
-3. Ensure microphone/camera permissions are granted
-4. Try refreshing the page or restarting the app
-
-## License 📄
+## License
 
 This project is open source and available under the MIT License.
 
----
+## Acknowledgments
 
-**Happy Learning!** 🤟 Keep practicing and you'll master ASL in no time!
-
+- ASL dataset images for learning materials
+- Web Speech API for voice recognition capabilities
+- React community for excellent documentation and tools
