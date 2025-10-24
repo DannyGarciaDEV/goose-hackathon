@@ -33,9 +33,13 @@ def handler(event, context):
         
         letter = path_parts[2]
         
-        # Path to ASL dataset
-        dataset_path = Path("asl_dataset")
+        # Path to ASL dataset - in Netlify, it's in the dist folder
+        dataset_path = Path("dist/asl_dataset")
         if not dataset_path.exists():
+            # Fallback for local development
+            dataset_path = Path("asl_dataset")
+        if not dataset_path.exists():
+            # Another fallback
             dataset_path = Path("/Users/dannygarcia/asl_learning_app/asl_dataset")
         
         letter_path = dataset_path / letter
