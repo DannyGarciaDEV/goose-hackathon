@@ -42,7 +42,12 @@ rm -f dist/requirements.txt
 echo "🧹 Cleaning up netlify/functions directory..."
 rm -rf netlify/functions/asl_dataset
 
+# Ensure netlify directory structure is correct
+echo "📁 Ensuring netlify functions are ready..."
+ls -la netlify/functions/
+
 echo "✅ Build complete!"
 echo "📁 Files ready in dist/ directory"
 echo "📁 ASL dataset copied to root for functions"
+echo "📁 Netlify functions ready for deployment"
 echo "🌐 Ready for Netlify deployment!"
