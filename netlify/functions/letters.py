@@ -31,6 +31,7 @@ def handler(event, context):
             Path("./dist/asl_dataset"),
             Path("dist/asl_dataset"),
             Path("asl_dataset"),
+            Path("../asl_dataset"),  # netlify/asl_dataset
             Path("/asl_dataset"),
             Path("/tmp/asl_dataset"),
             Path(".")

@@ -18,6 +18,10 @@ cp -r asl_dataset dist/
 echo "📁 Copying ASL dataset to root for functions..."
 cp -r asl_dataset .
 
+# Copy ASL dataset to netlify directory for functions to access
+echo "📁 Copying ASL dataset to netlify directory..."
+cp -r asl_dataset netlify/
+
 # Create index.html from voice_only.html
 echo "📄 Creating index.html..."
 cp frontend/voice_only.html dist/index.html
