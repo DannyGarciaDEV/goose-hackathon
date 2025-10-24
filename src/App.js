@@ -28,45 +28,66 @@ function App() {
   useEffect(() => {
     const timer = setTimeout(() => {
       console.log('🚀 Auto-starting voice recognition...');
-      setupVoiceRecognition();
-      if (recognitionRef.current) {
-        console.log('🎤 Starting voice recognition...');
-        recognitionRef.current.start();
-        setIsListening(true);
-        showStatus('🎤 Voice recognition active! Say commands like "next", "previous", "random", or letters like "A", "B", "C"', 'success');
+      
+      // Check if browser supports speech recognition
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        console.log('✅ Speech recognition supported');
+        setupVoiceRecognition();
+        
+        // Start recognition after a short delay
+        setTimeout(() => {
+          if (recognitionRef.current) {
+            console.log('🎤 Starting voice recognition...');
+            try {
+              recognitionRef.current.start();
+              setIsListening(true);
+              showStatus('🎤 Voice recognition active! Say commands like "next", "previous", "random", or letters like "A", "B", "C"', 'success');
+            } catch (error) {
+              console.error('❌ Error starting voice recognition:', error);
+              showStatus('❌ Error starting voice recognition. Please allow microphone access.', 'error');
+            }
+          } else {
+            console.error('❌ Voice recognition not initialized');
+            showStatus('❌ Voice recognition not initialized', 'error');
+          }
+        }, 500);
       } else {
+        console.error('❌ Speech recognition not supported');
         showStatus('❌ Voice recognition not available. Please use Chrome or Edge browser.', 'error');
       }
-    }, 2000);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, []);
 
   const loadLetters = async () => {
     try {
+      console.log('🔄 Loading letters...');
+      
       // For local development, use the dataset directly
       const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
       
-      console.log('Loading letters:', letters);
+      console.log('📝 Letters array:', letters);
+      console.log('📊 Letters length:', letters.length);
       
       if (letters && letters.length > 0) {
         setLetters(letters);
-        console.log('Successfully loaded', letters.length, 'letters');
-        showStatus(`Loaded ${letters.length} ASL letters`, 'success');
+        console.log('✅ Successfully loaded', letters.length, 'letters');
+        showStatus(`✅ Loaded ${letters.length} ASL letters`, 'success');
         
         // Set initial letter if not already set
-        if (!currentLetter) {
+        if (!currentLetter || currentLetter === '') {
           setCurrentLetter('a');
           setCurrentLetterIndex(0);
-          console.log('Set initial letter to A');
+          console.log('✅ Set initial letter to A');
         }
       } else {
-        console.error('No letters loaded');
-        showStatus('Error: No letters loaded', 'error');
+        console.error('❌ No letters loaded');
+        showStatus('❌ Error: No letters loaded', 'error');
       }
     } catch (error) {
-      console.error('Error loading letters:', error);
-      showStatus('Error loading letters: ' + error.message, 'error');
+      console.error('❌ Error loading letters:', error);
+      showStatus('❌ Error loading letters: ' + error.message, 'error');
     }
   };
 
@@ -254,6 +275,24 @@ function App() {
         setTimeout(() => setCurrentPage('quiz'), 1000);
         return true;
       },
+      'start practice': () => {
+        console.log('✅ START PRACTICE command detected');
+        showStatus('🎯 Starting quiz practice...', 'info');
+        setTimeout(() => {
+          setCurrentPage('quiz');
+          startQuiz();
+        }, 1000);
+        return true;
+      },
+      'practice': () => {
+        console.log('✅ PRACTICE command detected');
+        showStatus('🎯 Starting quiz practice...', 'info');
+        setTimeout(() => {
+          setCurrentPage('quiz');
+          startQuiz();
+        }, 1000);
+        return true;
+      },
       'learning': () => {
         console.log('✅ LEARNING command detected');
         showStatus('📚 Going back to learning mode...', 'info');
@@ -329,6 +368,16 @@ function App() {
       console.log('✅ QUIZ (contains) command detected');
       showStatus('🎯 Going to quiz mode...', 'info');
       setTimeout(() => setCurrentPage('quiz'), 1000);
+      return;
+    }
+    
+    if (cleanCommand.includes('start practice') || cleanCommand.includes('practice')) {
+      console.log('✅ START PRACTICE (contains) command detected');
+      showStatus('🎯 Starting quiz practice...', 'info');
+      setTimeout(() => {
+        setCurrentPage('quiz');
+        startQuiz();
+      }, 1000);
       return;
     }
     
