@@ -13,10 +13,14 @@ function App() {
   useEffect(() => {
     setupVoiceRecognition();
     setTimeout(() => {
-      if (recognitionRef.current) {
-        recognitionRef.current.start();
-        setIsListening(true);
-        setStatus('Voice recognition active! Say a letter like "A", "B", "C"...');
+      if (recognitionRef.current && !isListening) {
+        try {
+          recognitionRef.current.start();
+          setIsListening(true);
+          setStatus('Voice recognition active! Say a letter like "A", "B", "C"...');
+        } catch (error) {
+          console.log('Voice recognition already started or error:', error);
+        }
       }
     }, 1000);
   }, []);
@@ -50,22 +54,32 @@ function App() {
       };
 
       recognitionRef.current.onerror = (event) => {
+        console.log('Voice recognition error:', event.error);
         setIsListening(false);
         if (event.error === 'no-speech') {
           setTimeout(() => {
-            if (recognitionRef.current) {
-              recognitionRef.current.start();
-              setIsListening(true);
+            if (recognitionRef.current && !isListening) {
+              try {
+                recognitionRef.current.start();
+                setIsListening(true);
+              } catch (error) {
+                console.log('Error restarting voice recognition:', error);
+              }
             }
           }, 2000);
         }
       };
 
       recognitionRef.current.onend = () => {
+        console.log('Voice recognition ended');
         if (isListening) {
           setTimeout(() => {
             if (recognitionRef.current && isListening) {
-              recognitionRef.current.start();
+              try {
+                recognitionRef.current.start();
+              } catch (error) {
+                console.log('Error restarting voice recognition:', error);
+              }
             }
           }, 500);
         }
@@ -156,11 +170,19 @@ function App() {
               className={`voice-button ${isListening ? 'listening' : ''}`}
               onClick={() => {
                 if (isListening) {
-                  recognitionRef.current.stop();
-                  setIsListening(false);
+                  try {
+                    recognitionRef.current.stop();
+                    setIsListening(false);
+                  } catch (error) {
+                    console.log('Error stopping voice recognition:', error);
+                  }
                 } else {
-                  recognitionRef.current.start();
-                  setIsListening(true);
+                  try {
+                    recognitionRef.current.start();
+                    setIsListening(true);
+                  } catch (error) {
+                    console.log('Error starting voice recognition:', error);
+                  }
                 }
               }}
             >
