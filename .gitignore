@@ -54,3 +54,7 @@ yarn-error.log*
 
 # Netlify
 .netlify/
+
+# Private deployment files
+PRIVATE_DEPLOYMENT.md
+deploy_netlify.sh
