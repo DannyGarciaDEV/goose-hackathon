@@ -14,10 +14,6 @@ cp -r frontend/* dist/
 echo "📁 Copying ASL dataset..."
 cp -r asl_dataset dist/
 
-# Copy netlify functions
-echo "📁 Copying Netlify functions..."
-cp -r netlify dist/
-
 # Create index.html from voice_only.html
 echo "📄 Creating index.html..."
 cp frontend/voice_only.html dist/index.html
@@ -33,3 +29,4 @@ rm -f dist/requirements.txt
 echo "✅ Build complete!"
 echo "📁 Files ready in dist/ directory"
 echo "🌐 Ready for Netlify deployment!"
+echo "📝 Note: Netlify functions are in netlify/functions/ (not copied to dist)"
