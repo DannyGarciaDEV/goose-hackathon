@@ -50,16 +50,18 @@ function App() {
         setIsListening(true);
       };
 
-      recognitionRef.current.onresult = (event) => {
-        const last = event.results.length - 1;
-        const result = event.results[last];
-        
-        if (result.isFinal) {
-          const command = result[0].transcript.toLowerCase().trim();
-          showStatus(`Heard: "${command}"`);
-          processVoiceCommand(command);
-        }
-      };
+          recognitionRef.current.onresult = (event) => {
+            const last = event.results.length - 1;
+            const result = event.results[last];
+            
+            if (result.isFinal) {
+              const command = result[0].transcript.toLowerCase().trim();
+              console.log('Voice recognition result:', result[0].transcript);
+              console.log('Confidence:', result[0].confidence);
+              showStatus(`Heard: "${command}"`);
+              processVoiceCommand(command);
+            }
+          };
 
       recognitionRef.current.onerror = (event) => {
         console.log('Voice recognition error:', event.error);
@@ -100,7 +102,10 @@ function App() {
     console.log('Processing voice command:', cleanCommand);
     
     // Quiz controls - check these first
-    if (cleanCommand.includes('start quiz')) {
+    if (cleanCommand.includes('start quiz') || 
+        cleanCommand.includes('start the quiz') ||
+        cleanCommand.includes('begin quiz') ||
+        (cleanCommand.includes('start') && currentPage === 'quiz')) {
       console.log('Starting quiz command detected');
       setCurrentPage('quiz');
       setCommandsVisible(true);
@@ -297,6 +302,14 @@ function App() {
               <h5>🎯 Quiz</h5>
               <div className="command-item">
                 <span className="command-phrase">"start quiz"</span>
+                <span className="command-action">Begin quiz</span>
+              </div>
+              <div className="command-item">
+                <span className="command-phrase">"start"</span>
+                <span className="command-action">Start quiz (in quiz mode)</span>
+              </div>
+              <div className="command-item">
+                <span className="command-phrase">"begin quiz"</span>
                 <span className="command-action">Begin quiz</span>
               </div>
               <div className="command-item">
