@@ -40,9 +40,16 @@ function App() {
     try {
       // For local development, use the dataset directly
       const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
-      setLetters(letters);
-      console.log('Loaded', letters.length, 'letters');
+      
+      if (letters && letters.length > 0) {
+        setLetters(letters);
+        console.log('Loaded', letters.length, 'letters');
+        showStatus(`Loaded ${letters.length} ASL letters`, 'success');
+      } else {
+        showStatus('Error: No letters loaded', 'error');
+      }
     } catch (error) {
+      console.error('Error loading letters:', error);
       showStatus('Error loading letters: ' + error.message, 'error');
     }
   };
@@ -148,6 +155,12 @@ function App() {
   };
 
   const processVoiceCommand = (command) => {
+    if (!command || typeof command !== 'string') {
+      console.error('Invalid command:', command);
+      showStatus('Error: Invalid voice command', 'error');
+      return;
+    }
+    
     const cleanCommand = command.toLowerCase().trim();
     console.log('Processing command:', cleanCommand);
 
@@ -169,17 +182,33 @@ function App() {
     // Learning mode commands
     if (currentPage === 'learning') {
       if (cleanCommand.includes('next')) {
-        nextLetter();
+        if (letters.length > 0) {
+          nextLetter();
+        } else {
+          showStatus('Error: No letters available', 'error');
+        }
         return;
       } else if (cleanCommand.includes('previous') || cleanCommand.includes('back')) {
-        previousLetter();
+        if (letters.length > 0) {
+          previousLetter();
+        } else {
+          showStatus('Error: No letters available', 'error');
+        }
         return;
       } else if (cleanCommand.includes('random')) {
-        randomLetter();
+        if (letters.length > 0) {
+          randomLetter();
+        } else {
+          showStatus('Error: No letters available', 'error');
+        }
         return;
       } else if (cleanCommand.includes('repeat')) {
-        showLetter(currentLetter);
-        showStatus(`Showing letter ${currentLetter.toUpperCase()} again`, 'info');
+        if (currentLetter && letters.includes(currentLetter)) {
+          showLetter(currentLetter);
+          showStatus(`Showing letter ${currentLetter.toUpperCase()} again`, 'info');
+        } else {
+          showStatus('Error: No current letter to repeat', 'error');
+        }
         return;
       }
     }
@@ -188,7 +217,11 @@ function App() {
     if (currentPage === 'quiz') {
       if (cleanCommand.includes('start quiz') || cleanCommand.includes('start') || cleanCommand.includes('begin')) {
         if (!quizActive) {
-          startQuiz();
+          if (letters.length > 0) {
+            startQuiz();
+          } else {
+            showStatus('Error: No letters available for quiz', 'error');
+          }
           return;
         }
       } else if (cleanCommand.includes('next') || cleanCommand.includes('next question')) {
@@ -305,29 +338,46 @@ function App() {
   };
 
   const showLetter = (letter) => {
-    setCurrentLetter(letter);
-    setCurrentLetterIndex(letters.indexOf(letter));
+    if (letter && letters.includes(letter)) {
+      setCurrentLetter(letter);
+      setCurrentLetterIndex(letters.indexOf(letter));
+    } else {
+      console.error('Invalid letter:', letter);
+      showStatus(`Error: Invalid letter "${letter}"`, 'error');
+    }
   };
 
   const nextLetter = () => {
     const nextIndex = (currentLetterIndex + 1) % letters.length;
     const nextLetter = letters[nextIndex];
-    showLetter(nextLetter);
-    showStatus(`Next letter: ${nextLetter.toUpperCase()}`, 'info');
+    if (nextLetter) {
+      showLetter(nextLetter);
+      showStatus(`Next letter: ${nextLetter.toUpperCase()}`, 'info');
+    } else {
+      showStatus('Error: No next letter available', 'error');
+    }
   };
 
   const previousLetter = () => {
     const prevIndex = currentLetterIndex === 0 ? letters.length - 1 : currentLetterIndex - 1;
     const prevLetter = letters[prevIndex];
-    showLetter(prevLetter);
-    showStatus(`Previous letter: ${prevLetter.toUpperCase()}`, 'info');
+    if (prevLetter) {
+      showLetter(prevLetter);
+      showStatus(`Previous letter: ${prevLetter.toUpperCase()}`, 'info');
+    } else {
+      showStatus('Error: No previous letter available', 'error');
+    }
   };
 
   const randomLetter = () => {
     const randomIndex = Math.floor(Math.random() * letters.length);
     const randomLetter = letters[randomIndex];
-    showLetter(randomLetter);
-    showStatus(`Random letter: ${randomLetter.toUpperCase()}`, 'info');
+    if (randomLetter) {
+      showLetter(randomLetter);
+      showStatus(`Random letter: ${randomLetter.toUpperCase()}`, 'info');
+    } else {
+      showStatus('Error: No random letter available', 'error');
+    }
   };
 
   const startQuiz = () => {
@@ -341,15 +391,30 @@ function App() {
   const nextQuizQuestion = () => {
     if (!quizActive) return;
     
+    if (letters.length === 0) {
+      showStatus('Error: No letters available for quiz', 'error');
+      return;
+    }
+    
     const randomIndex = Math.floor(Math.random() * letters.length);
     const randomLetter = letters[randomIndex];
-    setCurrentQuizLetter(randomLetter);
-    setQuizTotal(prev => prev + 1);
-    showStatus(`Quiz question ${quizTotal + 1}: What letter is this?`, 'info');
+    
+    if (randomLetter) {
+      setCurrentQuizLetter(randomLetter);
+      setQuizTotal(prev => prev + 1);
+      showStatus(`Quiz question ${quizTotal + 1}: What letter is this?`, 'info');
+    } else {
+      showStatus('Error: Could not generate quiz question', 'error');
+    }
   };
 
   const checkQuizAnswer = (answer) => {
     if (!quizActive || !currentQuizLetter) return;
+    
+    if (!answer) {
+      showStatus('Error: No answer provided', 'error');
+      return;
+    }
     
     const isCorrect = answer.toLowerCase() === currentQuizLetter.toLowerCase();
     if (isCorrect) {
@@ -365,7 +430,12 @@ function App() {
   };
 
   const getImageUrl = (letter) => {
-    // For local development, we'll use a placeholder or try to load from the dataset
+    if (!letter) {
+      console.error('No letter provided to getImageUrl');
+      return '/asl_dataset/a/hand1_a_bot_seg_1_cropped.jpeg'; // Default fallback
+    }
+    
+    // For local development, we'll use the dataset directly
     // In production, this would use the Netlify functions
     return `/asl_dataset/${letter}/hand1_${letter}_bot_seg_1_cropped.jpeg`;
   };
