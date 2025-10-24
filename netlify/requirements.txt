@@ -1,0 +1,3 @@
+# Minimal requirements for Netlify functions only
+# These are the only dependencies needed for the serverless functions
+pathlib2==2.3.7
