@@ -21,7 +21,7 @@ def handler(event, context):
         }
     
     try:
-        # Path to ASL dataset - in Netlify, it's in the dist folder
+        # Path to ASL dataset - Netlify functions run from root, so look for dist/asl_dataset
         dataset_path = Path("dist/asl_dataset")
         if not dataset_path.exists():
             # Fallback for local development
@@ -30,9 +30,15 @@ def handler(event, context):
             # Another fallback
             dataset_path = Path("/Users/dannygarcia/asl_learning_app/asl_dataset")
         
+        # Debug: Log the path being used
+        print(f"Looking for dataset at: {dataset_path}")
+        print(f"Dataset exists: {dataset_path.exists()}")
+        
         # Get available letters
         letters = [d.name for d in dataset_path.iterdir() if d.is_dir()]
         letters.sort()
+        
+        print(f"Found {len(letters)} letters: {letters}")
         
         return {
             'statusCode': 200,
