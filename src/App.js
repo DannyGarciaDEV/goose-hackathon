@@ -20,8 +20,20 @@ function App() {
 
   // Load available letters
   useEffect(() => {
-    console.log('Component mounted, loading letters...');
+    console.log('🚀 Component mounted, loading letters...');
+    console.log('📊 Initial letters state:', letters);
+    console.log('📊 Initial currentLetter state:', currentLetter);
+    
+    // Load letters immediately
     loadLetters();
+    
+    // Also try loading again after a delay to ensure it works
+    setTimeout(() => {
+      console.log('🔄 Retry loading letters...');
+      if (letters.length === 0) {
+        loadLetters();
+      }
+    }, 1000);
   }, []);
 
   // Auto-start voice recognition
@@ -65,22 +77,28 @@ function App() {
       console.log('🔄 Loading letters...');
       
       // For local development, use the dataset directly
-      const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
+      const lettersArray = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
       
-      console.log('📝 Letters array:', letters);
-      console.log('📊 Letters length:', letters.length);
+      console.log('📝 Letters array:', lettersArray);
+      console.log('📊 Letters length:', lettersArray.length);
       
-      if (letters && letters.length > 0) {
-        setLetters(letters);
-        console.log('✅ Successfully loaded', letters.length, 'letters');
-        showStatus(`✅ Loaded ${letters.length} ASL letters`, 'success');
+      if (lettersArray && lettersArray.length > 0) {
+        console.log('🔄 Setting letters state...');
+        setLetters(lettersArray);
         
-        // Set initial letter if not already set
-        if (!currentLetter || currentLetter === '') {
-          setCurrentLetter('a');
-          setCurrentLetterIndex(0);
-          console.log('✅ Set initial letter to A');
-        }
+        // Force a small delay to ensure state is set
+        setTimeout(() => {
+          console.log('✅ Successfully loaded', lettersArray.length, 'letters');
+          showStatus(`✅ Loaded ${lettersArray.length} ASL letters`, 'success');
+          
+          // Set initial letter if not already set
+          if (!currentLetter || currentLetter === '') {
+            console.log('🔄 Setting initial letter to A...');
+            setCurrentLetter('a');
+            setCurrentLetterIndex(0);
+            console.log('✅ Set initial letter to A');
+          }
+        }, 100);
       } else {
         console.error('❌ No letters loaded');
         showStatus('❌ Error: No letters loaded', 'error');
@@ -241,6 +259,15 @@ function App() {
       console.log('⚠️ Letters not loaded yet, loading...');
       loadLetters();
       showStatus('Loading letters, please wait...', 'info');
+      
+      // For navigation commands, try to load letters and retry
+      if (cleanCommand.includes('next') || cleanCommand.includes('previous') || cleanCommand.includes('random')) {
+        setTimeout(() => {
+          if (letters.length > 0) {
+            processVoiceCommand(command);
+          }
+        }, 1000);
+      }
       return;
     }
 
@@ -660,16 +687,53 @@ function App() {
             <p className="subtitle">Learn American Sign Language with your voice!</p>
             
             <div className="current-letter">
-              <h2>{currentLetter.toUpperCase()}</h2>
-              <img 
-                src={getImageUrl(currentLetter)} 
-                alt={`ASL sign for ${currentLetter}`}
-                className="asl-image"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  showStatus(`Image not found for letter ${currentLetter.toUpperCase()}`, 'error');
+              <h2>{currentLetter ? currentLetter.toUpperCase() : 'Loading...'}</h2>
+              {currentLetter && (
+                <img 
+                  src={getImageUrl(currentLetter)} 
+                  alt={`ASL sign for ${currentLetter}`}
+                  className="asl-image"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    showStatus(`Image not found for letter ${currentLetter.toUpperCase()}`, 'error');
+                  }}
+                />
+              )}
+            </div>
+
+            {/* Debug Info */}
+            <div style={{textAlign: 'center', margin: '20px', padding: '10px', background: '#f0f0f0', borderRadius: '8px'}}>
+              <p><strong>Debug Info:</strong></p>
+              <p>Letters loaded: {letters.length}</p>
+              <p>Current letter: {currentLetter || 'None'}</p>
+              <p>Current page: {currentPage}</p>
+              <p>Voice active: {isListening ? 'Yes' : 'No'}</p>
+              <button 
+                onClick={() => {
+                  console.log('🔍 DEBUG STATE:', {
+                    letters: letters,
+                    lettersLength: letters.length,
+                    currentLetter: currentLetter,
+                    currentLetterIndex: currentLetterIndex,
+                    isListening: isListening,
+                    currentPage: currentPage,
+                    quizActive: quizActive
+                  });
+                  showStatus('Debug info logged to console (F12)', 'info');
                 }}
-              />
+                style={{padding: '8px 16px', margin: '5px', background: '#007bff', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}}
+              >
+                🔍 Debug State
+              </button>
+              <button 
+                onClick={() => {
+                  console.log('🔄 Force loading letters...');
+                  loadLetters();
+                }}
+                style={{padding: '8px 16px', margin: '5px', background: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer'}}
+              >
+                🔄 Reload Letters
+              </button>
             </div>
 
 
