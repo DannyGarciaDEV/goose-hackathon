@@ -5,11 +5,9 @@ A modern, interactive web application for learning American Sign Language (ASL) 
 ## Features ✨
 
 - **🎤 Voice Commands**: Navigate through letters using natural speech
-- **🔄 Auto Mode**: Letters advance automatically every 5 seconds
-- **📷 Camera Integration**: Practice signs with real-time feedback
 - **🎯 Interactive Learning**: Click letters or use voice commands
 - **📱 Responsive Design**: Works on desktop, tablet, and mobile
-- **🎨 Modern UI**: Beautiful, intuitive interface with animations
+
 
 ## Quick Start 🚀
 
@@ -172,4 +170,4 @@ This project is open source and available under the MIT License.
 ---
 
 **Happy Learning!** 🤟 Keep practicing and you'll master ASL in no time!
-# goose-hackathon
+

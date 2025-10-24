@@ -7,13 +7,16 @@
 2. **Netlify CLI**: Install with `npm install -g netlify-cli`
 
 ### Your Netlify Site ID
-**Site ID**: `64125433c5d83e2718a7444b`
+**Site ID**: `YOUR_SITE_ID` (replace with your actual site ID)
 
 ## Deployment Methods
 
 ### Method 1: One-Click Deploy (Recommended)
 ```bash
-# Run the deployment script
+# First, copy the template and add your site ID
+cp deploy_netlify_template.sh deploy_netlify.sh
+# Edit deploy_netlify.sh and replace YOUR_SITE_ID with your actual site ID
+# Then run:
 ./deploy_netlify.sh
 ```
 
@@ -29,7 +32,7 @@ npm install -g netlify-cli
 netlify login
 
 # Link to your site
-netlify link --id 64125433c5d83e2718a7444b
+netlify link --id YOUR_SITE_ID
 
 # Deploy
 netlify deploy --prod --dir=dist
@@ -41,7 +44,7 @@ netlify deploy --prod --dir=dist
    - Go to netlify.com
    - Click "New site from Git"
    - Connect your GitHub repo
-   - Use site ID: `64125433c5d83e2718a7444b`
+   - Use site ID: `YOUR_SITE_ID`
 
 ## Netlify Configuration
 
