@@ -65,9 +65,9 @@ function App() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = false;
+      recognitionRef.current.interimResults = true; // Enable interim results for better letter detection
       recognitionRef.current.lang = 'en-US';
-      recognitionRef.current.maxAlternatives = 1;
+      recognitionRef.current.maxAlternatives = 3; // Increase alternatives for better letter recognition
 
       recognitionRef.current.onstart = () => {
         setIsListening(true);
@@ -77,11 +77,17 @@ function App() {
       };
 
       recognitionRef.current.onresult = (event) => {
+        // Process the most recent result
         const last = event.results.length - 1;
-        const command = event.results[last][0].transcript.toLowerCase().trim();
-        console.log(`Voice command received: "${command}"`);
-        showStatus(`Heard: "${command}"`, 'info');
-        processVoiceCommand(command);
+        const result = event.results[last];
+        
+        // Only process final results, not interim ones
+        if (result.isFinal) {
+          const command = result[0].transcript.toLowerCase().trim();
+          console.log(`Voice command received: "${command}"`);
+          showStatus(`Heard: "${command}"`, 'info');
+          processVoiceCommand(command);
+        }
       };
 
       recognitionRef.current.onerror = (event) => {
@@ -220,19 +226,78 @@ function App() {
       return;
     }
 
-    // Check for letter commands - improved matching
-    const letterMatch = cleanCommand.match(/\b([a-z])\b/);
-    if (letterMatch) {
-      const letter = letterMatch[1];
-      if (letters.includes(letter)) {
-        if (currentPage === 'learning') {
-          showLetter(letter);
-          showStatus(`Showing letter ${letter.toUpperCase()}`, 'success');
-        } else if (currentPage === 'quiz' && quizActive) {
-          checkQuizAnswer(letter);
-        }
-        return;
+    // Enhanced letter detection - try multiple patterns
+    let detectedLetter = null;
+    
+    // Pattern 1: Single letter word boundaries
+    const letterMatch1 = cleanCommand.match(/\b([a-z])\b/);
+    if (letterMatch1) {
+      detectedLetter = letterMatch1[1];
+    }
+    
+    // Pattern 2: Letter at start of command
+    if (!detectedLetter) {
+      const letterMatch2 = cleanCommand.match(/^([a-z])\b/);
+      if (letterMatch2) {
+        detectedLetter = letterMatch2[1];
       }
+    }
+    
+    // Pattern 3: Letter followed by space or end
+    if (!detectedLetter) {
+      const letterMatch3 = cleanCommand.match(/([a-z])(?:\s|$)/);
+      if (letterMatch3) {
+        detectedLetter = letterMatch3[1];
+      }
+    }
+    
+    // Pattern 4: Common letter pronunciations
+    const letterPronunciations = {
+      'ay': 'a', 'eh': 'a', 'ah': 'a',
+      'bee': 'b', 'be': 'b',
+      'see': 'c', 'cee': 'c',
+      'dee': 'd', 'de': 'd',
+      'ee': 'e', 'eh': 'e',
+      'ef': 'f', 'eff': 'f',
+      'jee': 'g', 'ge': 'g',
+      'aitch': 'h', 'h': 'h',
+      'eye': 'i', 'ai': 'i',
+      'jay': 'j', 'je': 'j',
+      'kay': 'k', 'ke': 'k',
+      'el': 'l', 'ell': 'l',
+      'em': 'm', 'emm': 'm',
+      'en': 'n', 'enn': 'n',
+      'oh': 'o', 'owe': 'o',
+      'pee': 'p', 'pe': 'p',
+      'cue': 'q', 'qu': 'q',
+      'ar': 'r', 'arr': 'r',
+      'es': 's', 'ess': 's',
+      'tee': 't', 'te': 't',
+      'you': 'u', 'yu': 'u',
+      'vee': 'v', 've': 'v',
+      'double you': 'w', 'dubya': 'w',
+      'ex': 'x', 'ecks': 'x',
+      'why': 'y', 'wy': 'y',
+      'zee': 'z', 'zed': 'z'
+    };
+    
+    if (!detectedLetter) {
+      for (const [pronunciation, letter] of Object.entries(letterPronunciations)) {
+        if (cleanCommand.includes(pronunciation)) {
+          detectedLetter = letter;
+          break;
+        }
+      }
+    }
+
+    if (detectedLetter && letters.includes(detectedLetter)) {
+      if (currentPage === 'learning') {
+        showLetter(detectedLetter);
+        showStatus(`Showing letter ${detectedLetter.toUpperCase()}`, 'success');
+      } else if (currentPage === 'quiz' && quizActive) {
+        checkQuizAnswer(detectedLetter);
+      }
+      return;
     }
 
     // If no command matched, show help
@@ -386,7 +451,35 @@ function App() {
                 <li>Say <strong>"quiz"</strong> → Go to quiz mode</li>
                 <li>Say <strong>"A"</strong>, <strong>"B"</strong>, <strong>"C"</strong>, etc. → Jump to letter</li>
               </ul>
-              <p><strong>💡 Tip:</strong> You can say letters different ways: "A", "ay", "eh" all work for letter A!</p>
+              <p><strong>💡 Letter Tips:</strong> You can say letters many ways!</p>
+              <ul>
+                <li><strong>A:</strong> "A", "ay", "eh", "ah"</li>
+                <li><strong>B:</strong> "B", "bee", "be"</li>
+                <li><strong>C:</strong> "C", "see", "cee"</li>
+                <li><strong>D:</strong> "D", "dee", "de"</li>
+                <li><strong>E:</strong> "E", "ee", "eh"</li>
+                <li><strong>F:</strong> "F", "ef", "eff"</li>
+                <li><strong>G:</strong> "G", "jee", "ge"</li>
+                <li><strong>H:</strong> "H", "aitch"</li>
+                <li><strong>I:</strong> "I", "eye", "ai"</li>
+                <li><strong>J:</strong> "J", "jay", "je"</li>
+                <li><strong>K:</strong> "K", "kay", "ke"</li>
+                <li><strong>L:</strong> "L", "el", "ell"</li>
+                <li><strong>M:</strong> "M", "em", "emm"</li>
+                <li><strong>N:</strong> "N", "en", "enn"</li>
+                <li><strong>O:</strong> "O", "oh", "owe"</li>
+                <li><strong>P:</strong> "P", "pee", "pe"</li>
+                <li><strong>Q:</strong> "Q", "cue", "qu"</li>
+                <li><strong>R:</strong> "R", "ar", "arr"</li>
+                <li><strong>S:</strong> "S", "es", "ess"</li>
+                <li><strong>T:</strong> "T", "tee", "te"</li>
+                <li><strong>U:</strong> "U", "you", "yu"</li>
+                <li><strong>V:</strong> "V", "vee", "ve"</li>
+                <li><strong>W:</strong> "W", "double you", "dubya"</li>
+                <li><strong>X:</strong> "X", "ex", "ecks"</li>
+                <li><strong>Y:</strong> "Y", "why", "wy"</li>
+                <li><strong>Z:</strong> "Z", "zee", "zed"</li>
+              </ul>
               <p><strong>🎯 Quiz:</strong> Say "quiz", "test", or "challenge" to start quizzing!</p>
             </div>
           </div>
@@ -451,7 +544,8 @@ function App() {
                 <li>Say <strong>"next"</strong> for next question</li>
                 <li>Say <strong>"learning"</strong> to go back to learning mode</li>
               </ul>
-              <p><strong>💡 Tip:</strong> You can say letters different ways: "A", "ay", "eh" all work for letter A!</p>
+              <p><strong>💡 Letter Tips:</strong> You can say letters many ways!</p>
+              <p><strong>Examples:</strong> "A" or "ay" or "eh" all work for letter A!</p>
               <p><strong>🎤 Voice Commands:</strong> Say "start quiz", "next", "learning", or any letter!</p>
             </div>
           </div>
