@@ -42,6 +42,18 @@ rm -f dist/requirements.txt
 echo "🧹 Cleaning up netlify/functions directory..."
 rm -rf netlify/functions/asl_dataset
 
+# Copy dataset to each function directory so they can access it
+echo "📁 Copying dataset to function directories..."
+for func_file in netlify/functions/*.py netlify/functions/*.js; do
+    if [ -f "$func_file" ]; then
+        func_dir=$(dirname "$func_file")
+        func_name=$(basename "$func_file" .py)
+        func_name=$(basename "$func_name" .js)
+        echo "  Copying dataset to $func_name function..."
+        cp -r asl_dataset "$func_dir/asl_dataset"
+    fi
+done
+
 # Ensure netlify directory structure is correct
 echo "📁 Ensuring netlify functions are ready..."
 ls -la netlify/functions/

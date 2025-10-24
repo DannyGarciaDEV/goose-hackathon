@@ -21,6 +21,7 @@ exports.handler = async (event, context) => {
     try {
         // Try multiple paths for the dataset
         const possiblePaths = [
+            './asl_dataset',  // Dataset copied to function directory
             './dist/asl_dataset',
             'dist/asl_dataset',
             'asl_dataset',
