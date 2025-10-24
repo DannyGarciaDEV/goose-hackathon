@@ -487,38 +487,101 @@ h1 {
   top: 50%;
   left: 20px;
   transform: translateY(-50%);
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 15px;
-  padding: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  max-width: 250px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(15px);
+  border-radius: 20px;
+  padding: 0;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  max-width: 320px;
   z-index: 1000;
   transition: all 0.3s ease;
+  overflow: hidden;
 }
 
-.voice-commands-panel h4 {
-  margin: 0 0 15px 0;
-  color: #2563eb;
-  font-size: 1.1rem;
+.commands-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.voice-commands-panel ul {
-  list-style: none;
-  padding: 0;
+.commands-header h4 {
   margin: 0;
-}
-
-.voice-commands-panel li {
-  margin: 8px 0;
-  font-size: 0.9rem;
-  line-height: 1.4;
-}
-
-.voice-commands-panel strong {
-  color: #2563eb;
+  font-size: 1.1rem;
   font-weight: 600;
+}
+
+.close-commands {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: background 0.2s ease;
+}
+
+.close-commands:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.commands-content {
+  padding: 20px;
+}
+
+.command-section {
+  margin-bottom: 20px;
+}
+
+.command-section:last-child {
+  margin-bottom: 0;
+}
+
+.command-section h5 {
+  margin: 0 0 12px 0;
+  color: #2563eb;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.command-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.command-item:last-child {
+  border-bottom: none;
+}
+
+.command-phrase {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  font-family: 'Courier New', monospace;
+}
+
+.command-action {
+  color: #666;
+  font-size: 0.85rem;
+  text-align: right;
+  flex: 1;
+  margin-left: 10px;
 }
 
 /* Quiz Mode */
@@ -601,6 +664,80 @@ h1 {
   border-radius: 5px;
 }
 
+/* Navigation Bar */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(15px);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #2563eb;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.navbar-brand:hover {
+  color: #1d4ed8;
+}
+
+.navbar-nav {
+  display: flex;
+  gap: 2rem;
+}
+
+.nav-link {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  color: #666;
+  position: relative;
+}
+
+.nav-link:hover {
+  background: rgba(102, 126, 234, 0.1);
+  color: #2563eb;
+}
+
+.nav-link.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.voice-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.voice-icon {
+  font-size: 1.1rem;
+}
+
+.voice-text {
+  color: #2563eb;
+}
+
 /* Responsive Design for Voice Commands Panel */
 @media (max-width: 768px) {
   .voice-commands-panel {
@@ -617,6 +754,28 @@ h1 {
   .quiz-stats {
     flex-direction: column;
     gap: 1rem;
+  }
+  
+  .navbar {
+    padding: 0.75rem 1rem;
+  }
+  
+  .navbar-brand {
+    font-size: 1.2rem;
+  }
+  
+  .navbar-nav {
+    gap: 1rem;
+  }
+  
+  .nav-link {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+  }
+  
+  .voice-status {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
   }
 }
 

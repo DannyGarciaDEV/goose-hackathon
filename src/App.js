@@ -227,6 +227,31 @@ function App() {
 
   return (
     <div className="app">
+      {/* Navigation Bar */}
+      <nav className="navbar">
+        <div className="navbar-brand">
+          🤟 ASL Learning
+        </div>
+        <div className="navbar-nav">
+          <div 
+            className={`nav-link ${currentPage === 'learning' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('learning')}
+          >
+            📚 Learning
+          </div>
+          <div 
+            className={`nav-link ${currentPage === 'quiz' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('quiz')}
+          >
+            🎯 Quiz
+          </div>
+        </div>
+        <div className="voice-status">
+          <span className="voice-icon">{isListening ? '🎤' : '🔇'}</span>
+          <span className="voice-text">{isListening ? 'Voice Active' : 'Voice Inactive'}</span>
+        </div>
+      </nav>
+
       {/* Status Message */}
       {status && (
         <div className="status">
@@ -237,20 +262,60 @@ function App() {
       {/* Voice Commands Panel */}
       {commandsVisible && (
         <div className="voice-commands-panel">
-          <h4>🎤 Voice Commands</h4>
-          <ul>
-            <li><strong>Navigation:</strong></li>
-            <li>"quiz" → Go to quiz mode</li>
-            <li>"learning" → Back to learning</li>
-            <li><strong>Quiz:</strong></li>
-            <li>"start quiz" → Begin quiz</li>
-            <li>"next question" → Next question</li>
-            <li><strong>Commands:</strong></li>
-            <li>"hide commands" → Hide this panel</li>
-            <li>"show commands" → Show this panel</li>
-            <li><strong>Letters:</strong></li>
-            <li>Say any letter: "A", "B", "C", etc.</li>
-          </ul>
+          <div className="commands-header">
+            <h4>🎤 Voice Commands</h4>
+            <button 
+              className="close-commands"
+              onClick={() => setCommandsVisible(false)}
+            >
+              ✕
+            </button>
+          </div>
+          <div className="commands-content">
+            <div className="command-section">
+              <h5>🧭 Navigation</h5>
+              <div className="command-item">
+                <span className="command-phrase">"quiz"</span>
+                <span className="command-action">Go to quiz mode</span>
+              </div>
+              <div className="command-item">
+                <span className="command-phrase">"learning"</span>
+                <span className="command-action">Back to learning</span>
+              </div>
+            </div>
+            
+            <div className="command-section">
+              <h5>🎯 Quiz</h5>
+              <div className="command-item">
+                <span className="command-phrase">"start quiz"</span>
+                <span className="command-action">Begin quiz</span>
+              </div>
+              <div className="command-item">
+                <span className="command-phrase">"next question"</span>
+                <span className="command-action">Next question</span>
+              </div>
+            </div>
+            
+            <div className="command-section">
+              <h5>⚙️ Controls</h5>
+              <div className="command-item">
+                <span className="command-phrase">"hide commands"</span>
+                <span className="command-action">Hide this panel</span>
+              </div>
+              <div className="command-item">
+                <span className="command-phrase">"show commands"</span>
+                <span className="command-action">Show this panel</span>
+              </div>
+            </div>
+            
+            <div className="command-section">
+              <h5>🔤 Letters</h5>
+              <div className="command-item">
+                <span className="command-phrase">"A", "B", "C"...</span>
+                <span className="command-action">Show letter or answer</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
