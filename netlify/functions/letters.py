@@ -21,7 +21,7 @@ def handler(event, context):
         }
     
     try:
-        # Path to ASL dataset - Netlify functions run from root, so look for dist/asl_dataset
+        # Path to ASL dataset - In Netlify, the dataset is in dist/asl_dataset
         dataset_path = Path("dist/asl_dataset")
         if not dataset_path.exists():
             # Fallback for local development
