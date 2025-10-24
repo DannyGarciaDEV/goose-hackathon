@@ -72,9 +72,9 @@ function App() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = true; // Enable interim results for better letter detection
+      recognitionRef.current.interimResults = false; // Disable interim results for cleaner detection
       recognitionRef.current.lang = 'en-US';
-      recognitionRef.current.maxAlternatives = 3; // Increase alternatives for better letter recognition
+      recognitionRef.current.maxAlternatives = 1; // Reduce to 1 for simpler processing
 
       recognitionRef.current.onstart = () => {
         setIsListening(true);
@@ -84,14 +84,16 @@ function App() {
       };
 
       recognitionRef.current.onresult = (event) => {
+        console.log('Voice recognition result:', event);
+        
         // Process the most recent result
         const last = event.results.length - 1;
         const result = event.results[last];
         
-        // Only process final results, not interim ones
         if (result.isFinal) {
           const command = result[0].transcript.toLowerCase().trim();
-          console.log(`Voice command received: "${command}"`);
+          console.log(`Final voice command: "${command}"`);
+          console.log(`Confidence: ${result[0].confidence}`);
           showStatus(`Heard: "${command}"`, 'info');
           processVoiceCommand(command);
         }
@@ -103,7 +105,7 @@ function App() {
         updateVoiceStatus();
         
         if (event.error === 'no-speech') {
-          showStatus('No speech detected. Try again!', 'error');
+          showStatus('No speech detected. Try speaking louder!', 'error');
           // Restart after a delay
           setTimeout(() => {
             if (isListening) {
@@ -112,6 +114,8 @@ function App() {
           }, 2000);
         } else if (event.error === 'not-allowed') {
           showStatus('Microphone access denied. Please allow microphone access.', 'error');
+        } else if (event.error === 'network') {
+          showStatus('Network error. Check your internet connection.', 'error');
         } else {
           showStatus(`Voice error: ${event.error}`, 'error');
         }
@@ -259,98 +263,68 @@ function App() {
       return;
     }
 
-    // Enhanced letter detection - try multiple patterns
+    // Enhanced letter detection - simplified for better reliability
     let detectedLetter = null;
     
-    // Pattern 1: Single letter word boundaries (both upper and lowercase)
-    const letterMatch1 = cleanCommand.match(/\b([a-zA-Z])\b/);
-    if (letterMatch1) {
-      detectedLetter = letterMatch1[1].toLowerCase();
+    console.log('Looking for letter in command:', cleanCommand);
+    
+    // Pattern 1: Direct letter match (most reliable)
+    const directMatch = cleanCommand.match(/^(a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z)$/);
+    if (directMatch) {
+      detectedLetter = directMatch[1];
+      console.log('Direct letter match:', detectedLetter);
     }
     
-    // Pattern 2: Letter at start of command (both upper and lowercase)
+    // Pattern 2: Single letter word boundaries
     if (!detectedLetter) {
-      const letterMatch2 = cleanCommand.match(/^([a-zA-Z])\b/);
-      if (letterMatch2) {
-        detectedLetter = letterMatch2[1].toLowerCase();
+      const letterMatch = cleanCommand.match(/\b([a-zA-Z])\b/);
+      if (letterMatch) {
+        detectedLetter = letterMatch[1].toLowerCase();
+        console.log('Word boundary match:', detectedLetter);
       }
     }
     
-    // Pattern 3: Letter followed by space or end (both upper and lowercase)
+    // Pattern 3: Common letter pronunciations (simplified)
     if (!detectedLetter) {
-      const letterMatch3 = cleanCommand.match(/([a-zA-Z])(?:\s|$)/);
-      if (letterMatch3) {
-        detectedLetter = letterMatch3[1].toLowerCase();
-      }
-    }
-    
-    // Pattern 4: Common letter pronunciations (enhanced with uppercase)
-    const letterPronunciations = {
-      // Lowercase pronunciations
-      'ay': 'a', 'eh': 'a', 'ah': 'a',
-      'bee': 'b', 'be': 'b',
-      'see': 'c', 'cee': 'c',
-      'dee': 'd', 'de': 'd',
-      'ee': 'e', 'eh': 'e',
-      'ef': 'f', 'eff': 'f',
-      'jee': 'g', 'ge': 'g',
-      'aitch': 'h', 'h': 'h',
-      'eye': 'i', 'ai': 'i',
-      'jay': 'j', 'je': 'j',
-      'kay': 'k', 'ke': 'k',
-      'el': 'l', 'ell': 'l',
-      'em': 'm', 'emm': 'm',
-      'en': 'n', 'enn': 'n',
-      'oh': 'o', 'owe': 'o',
-      'pee': 'p', 'pe': 'p',
-      'cue': 'q', 'qu': 'q',
-      'ar': 'r', 'arr': 'r',
-      'es': 's', 'ess': 's',
-      'tee': 't', 'te': 't',
-      'you': 'u', 'yu': 'u',
-      'vee': 'v', 've': 'v',
-      'double you': 'w', 'dubya': 'w',
-      'ex': 'x', 'ecks': 'x',
-      'why': 'y', 'wy': 'y',
-      'zee': 'z', 'zed': 'z',
+      const pronunciations = {
+        'ay': 'a', 'eh': 'a', 'ah': 'a',
+        'bee': 'b', 'be': 'b',
+        'see': 'c', 'cee': 'c',
+        'dee': 'd', 'de': 'd',
+        'ee': 'e', 'eh': 'e',
+        'ef': 'f', 'eff': 'f',
+        'jee': 'g', 'ge': 'g',
+        'aitch': 'h', 'h': 'h',
+        'eye': 'i', 'ai': 'i',
+        'jay': 'j', 'je': 'j',
+        'kay': 'k', 'ke': 'k',
+        'el': 'l', 'ell': 'l',
+        'em': 'm', 'emm': 'm',
+        'en': 'n', 'enn': 'n',
+        'oh': 'o', 'owe': 'o',
+        'pee': 'p', 'pe': 'p',
+        'cue': 'q', 'qu': 'q',
+        'ar': 'r', 'arr': 'r',
+        'es': 's', 'ess': 's',
+        'tee': 't', 'te': 't',
+        'you': 'u', 'yu': 'u',
+        'vee': 'v', 've': 'v',
+        'double you': 'w', 'dubya': 'w',
+        'ex': 'x', 'ecks': 'x',
+        'why': 'y', 'wy': 'y',
+        'zee': 'z', 'zed': 'z'
+      };
       
-      // Uppercase pronunciations
-      'AY': 'a', 'EH': 'a', 'AH': 'a',
-      'BEE': 'b', 'BE': 'b',
-      'SEE': 'c', 'CEE': 'c',
-      'DEE': 'd', 'DE': 'd',
-      'EE': 'e', 'EH': 'e',
-      'EF': 'f', 'EFF': 'f',
-      'JEE': 'g', 'GE': 'g',
-      'AITCH': 'h', 'H': 'h',
-      'EYE': 'i', 'AI': 'i',
-      'JAY': 'j', 'JE': 'j',
-      'KAY': 'k', 'KE': 'k',
-      'EL': 'l', 'ELL': 'l',
-      'EM': 'm', 'EMM': 'm',
-      'EN': 'n', 'ENN': 'n',
-      'OH': 'o', 'OWE': 'o',
-      'PEE': 'p', 'PE': 'p',
-      'CUE': 'q', 'QU': 'q',
-      'AR': 'r', 'ARR': 'r',
-      'ES': 's', 'ESS': 's',
-      'TEE': 't', 'TE': 't',
-      'YOU': 'u', 'YU': 'u',
-      'VEE': 'v', 'VE': 'v',
-      'DOUBLE YOU': 'w', 'DUBYA': 'w',
-      'EX': 'x', 'ECKS': 'x',
-      'WHY': 'y', 'WY': 'y',
-      'ZEE': 'z', 'ZED': 'z'
-    };
-    
-    if (!detectedLetter) {
-      for (const [pronunciation, letter] of Object.entries(letterPronunciations)) {
+      for (const [pronunciation, letter] of Object.entries(pronunciations)) {
         if (cleanCommand.includes(pronunciation)) {
           detectedLetter = letter;
+          console.log('Pronunciation match:', pronunciation, '->', letter);
           break;
         }
       }
     }
+    
+    console.log('Final detected letter:', detectedLetter);
 
     if (detectedLetter && letters.includes(detectedLetter)) {
       if (currentPage === 'learning') {
@@ -538,6 +512,21 @@ function App() {
               >
                 {isListening ? '🔇 Stop Voice' : '🎤 Start Voice'}
               </button>
+              
+              {/* Debug button for testing */}
+              <button 
+                className="voice-button"
+                onClick={() => {
+                  console.log('Testing voice recognition...');
+                  console.log('Current letters:', letters);
+                  console.log('Current letter:', currentLetter);
+                  console.log('Is listening:', isListening);
+                  showStatus('Debug info logged to console', 'info');
+                }}
+                style={{ marginLeft: '10px', fontSize: '0.9rem', padding: '0.5rem 1rem' }}
+              >
+                🔍 Debug
+              </button>
             </div>
 
             <div className="instructions">
@@ -580,6 +569,14 @@ function App() {
                 <li><strong>Z:</strong> "Z", "z", "zee", "zed", "ZEE", "ZED"</li>
               </ul>
               <p><strong>🎯 Quiz:</strong> Say "quiz", "test", or "challenge" to start quizzing!</p>
+              <p><strong>🔧 Troubleshooting:</strong></p>
+              <ul>
+                <li>Make sure microphone is allowed</li>
+                <li>Speak clearly and loudly</li>
+                <li>Try saying just the letter: "A", "B", "C"</li>
+                <li>Check browser console (F12) for debug info</li>
+                <li>Use Chrome or Edge for best results</li>
+              </ul>
             </div>
           </div>
         ) : (
