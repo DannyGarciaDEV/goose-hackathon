@@ -1,0 +1,15 @@
+{
+  "name": "asl-learning-app",
+  "version": "1.0.0",
+  "description": "Voice-controlled ASL Learning App",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo 'Build complete'",
+    "dev": "python3 backend/voice_only_app.py"
+  },
+  "keywords": ["asl", "sign-language", "voice-control", "education"],
+  "author": "Danny Garcia",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}

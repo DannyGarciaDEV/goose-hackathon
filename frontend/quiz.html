@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASL Quiz - Test Your Knowledge!</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            text-align: center;
+            color: white;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        h1 {
+            color: white;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+        
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .quiz-header h2 {
+            margin: 0;
+            color: white;
+            font-size: 1.8rem;
+        }
+        
+        .quiz-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        
+        .quiz-question {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 30px 0;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .quiz-question h3 {
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+        
+        .quiz-image {
+            max-width: 400px;
+            max-height: 400px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            margin: 20px auto;
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        
+        .quiz-answer {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: none;
+        }
+        
+        .quiz-answer.correct {
+            background: rgba(0,184,148,0.2);
+            color: #00b894;
+            border: 1px solid rgba(0,184,148,0.5);
+        }
+        
+        .quiz-answer.incorrect {
+            background: rgba(255,107,107,0.2);
+            color: #ff6b6b;
+            border: 1px solid rgba(255,107,107,0.5);
+        }
+        
+        .quiz-controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .quiz-button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .quiz-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .quiz-button.start {
+            background: linear-gradient(45deg, #00b894, #00a085);
+        }
+        
+        .quiz-button.next {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+        }
+        
+        .voice-button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 24px;
+            margin: 20px;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 300px;
+        }
+        
+        .voice-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        
+        .voice-button.listening {
+            background: linear-gradient(45deg, #00b894, #00a085);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .status {
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 18px;
+            font-weight: bold;
+            backdrop-filter: blur(5px);
+            word-wrap: break-word;
+        }
+        
+        .status.success {
+            background: rgba(0,184,148,0.2);
+            color: white;
+            border: 1px solid rgba(0,184,148,0.5);
+        }
+        
+        .status.error {
+            background: rgba(255,107,107,0.2);
+            color: white;
+            border: 1px solid rgba(255,107,107,0.5);
+        }
+        
+        .status.info {
+            background: rgba(116,185,255,0.2);
+            color: white;
+            border: 1px solid rgba(116,185,255,0.5);
+        }
+        
+        .instructions {
+            background: rgba(255,255,255,0.1);
+            padding: 25px;
+            border-radius: 15px;
+            margin: 30px 0;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+            color: white;
+            font-size: 1.4rem;
+        }
+        
+        .instructions ul {
+            text-align: left;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .instructions li {
+            margin: 10px 0;
+            font-size: 1.1rem;
+        }
+        
+        .instructions p {
+            font-size: 1rem;
+            margin-top: 20px;
+            font-style: italic;
+        }
+
+        /* Floating Voice Commands Panel */
+        .voice-commands-panel {
+            position: fixed;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(37, 99, 235, 0.95);
+            color: white;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            max-width: 14rem;
+            min-width: 12rem;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .voice-commands-panel.hidden {
+            transform: translateY(-50%) translateX(-100%);
+            opacity: 0;
+        }
+
+        .voice-commands-panel h3 {
+            margin: 0 0 0.75rem 0;
+            font-size: 0.95rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .voice-commands-panel ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .voice-commands-panel li {
+            padding: 0.3rem 0;
+            font-size: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .voice-commands-panel li:last-child {
+            border-bottom: none;
+        }
+
+        .voice-commands-panel .command-keyword {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.15rem 0.4rem;
+            border-radius: 0.25rem;
+            font-weight: bold;
+            font-size: 0.7rem;
+            min-width: 2.5rem;
+            text-align: center;
+        }
+
+        .voice-commands-panel .command-action {
+            flex: 1;
+            font-size: 0.7rem;
+        }
+
+        .voice-commands-panel .tip {
+            margin-top: 0.75rem;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 0.4rem;
+            font-size: 0.7rem;
+            text-align: center;
+        }
+
+        /* Voice Status Indicator */
+        .voice-status {
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.8rem;
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .voice-status.active {
+            background: rgba(34, 197, 94, 0.9);
+        }
+
+        .voice-status.inactive {
+            background: rgba(239, 68, 68, 0.9);
+        }
+
+        .voice-status-icon {
+            font-size: 1rem;
+        }
+
+        /* Responsive adjustments for floating panel */
+        @media (max-width: 768px) {
+            .voice-commands-panel {
+                left: 0.5rem;
+                right: 0.5rem;
+                max-width: none;
+                min-width: auto;
+                top: auto;
+                bottom: 1rem;
+                transform: none;
+                padding: 0.75rem;
+            }
+            
+            .voice-commands-panel.hidden {
+                transform: translateY(100%);
+            }
+            
+            .voice-commands-panel h3 {
+                font-size: 0.9rem;
+            }
+            
+            .voice-commands-panel li {
+                font-size: 0.7rem;
+                padding: 0.25rem 0;
+            }
+            
+            .voice-commands-panel .command-keyword {
+                font-size: 0.65rem;
+                min-width: 2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .voice-commands-panel {
+                left: 0.25rem;
+                right: 0.25rem;
+                bottom: 0.5rem;
+                padding: 0.6rem;
+            }
+            
+            .voice-commands-panel h3 {
+                font-size: 0.85rem;
+            }
+            
+            .voice-commands-panel li {
+                font-size: 0.65rem;
+            }
+        }
+        
+        /* Navigation Bar Styles */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding: 15px 20px;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .navbar-brand {
+            color: white;
+            font-size: 1.3rem;
+            font-weight: bold;
+            text-decoration: none;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .navbar-nav {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+        
+        .nav-link:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-1px);
+        }
+        
+        .nav-link.active {
+            background: linear-gradient(45deg, #00b894, #00a085);
+            border: 1px solid rgba(0,184,148,0.5);
+        }
+        
+        .nav-link.quiz {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            border: 1px solid rgba(255,107,107,0.5);
+        }
+        
+        .nav-link.quiz:hover {
+            background: linear-gradient(45deg, #ff5252, #d32f2f);
+        }
+        
+        /* Add top padding to body to account for fixed navbar */
+        body {
+            padding-top: 80px;
+        }
+        
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            text-decoration: none;
+            font-size: 1.1rem;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 25px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .back-link:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-1px);
+        }
+        
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 20px;
+                margin: 0 5px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+            
+            .quiz-image {
+                max-width: 300px;
+                max-height: 300px;
+            }
+            
+            .voice-button {
+                padding: 15px 30px;
+                font-size: 20px;
+                margin: 15px;
+            }
+            
+            .status {
+                font-size: 16px;
+                padding: 15px;
+            }
+            
+            .instructions {
+                padding: 20px;
+            }
+            
+            .quiz-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .quiz-stats {
+                justify-content: center;
+            }
+            
+            .back-link {
+                position: relative;
+                top: 0;
+                left: 0;
+                margin-bottom: 20px;
+                display: inline-block;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+            
+            .container {
+                padding: 15px;
+                margin: 0;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .subtitle {
+                font-size: 0.9rem;
+            }
+            
+            .quiz-image {
+                max-width: 250px;
+                max-height: 250px;
+            }
+            
+            .voice-button {
+                padding: 12px 25px;
+                font-size: 18px;
+            }
+            
+            .status {
+                font-size: 14px;
+                padding: 12px;
+            }
+            
+            .instructions {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">🤟 ASL Learning</a>
+        <div class="navbar-nav">
+            <a href="/" class="nav-link">📚 Learning</a>
+            <a href="/quiz" class="nav-link quiz active">🎯 Quiz</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <h1>🎯 ASL Quiz Challenge</h1>
+        <p class="subtitle">Test your ASL knowledge! Look at the sign and say the letter!</p>
+        
+        <div class="quiz-header">
+            <h2>Quiz Mode</h2>
+            <div class="quiz-stats">
+                <span id="quizScore">Score: 0/0</span>
+                <span id="quizStreak">Streak: 0</span>
+            </div>
+        </div>
+        
+        <div class="quiz-question" id="quizQuestion" style="display: none;">
+            <h3>What letter is this?</h3>
+            <img id="quizImage" class="quiz-image" src="" alt="ASL Sign">
+            <div class="quiz-answer" id="quizAnswer"></div>
+        </div>
+        
+        <div class="quiz-controls">
+            <button id="startQuizBtn" class="quiz-button start" onclick="startQuiz()">
+                🚀 Start Quiz
+            </button>
+            <button id="nextQuizBtn" class="quiz-button next" onclick="nextQuizQuestion()" style="display: none;">
+                Next Question
+            </button>
+        </div>
+        
+        <button id="voiceButton" class="voice-button" onclick="toggleVoiceRecognition()" style="display: none;">
+            🎤 Start Voice Commands
+        </button>
+        
+        <div id="status" class="status" style="display: none;"></div>
+        
+       
+    </div>
+
+    <!-- Floating Voice Commands Panel -->
+    <div class="voice-commands-panel">
+        <h3>🎯 Quiz Commands</h3>
+        <ul>
+            <li>
+                <span class="command-keyword">start quiz</span>
+                <span class="command-action">Begin quiz</span>
+            </li>
+            <li>
+                <span class="command-keyword">next</span>
+                <span class="command-action">Next question</span>
+            </li>
+            <li>
+                <span class="command-keyword">learning</span>
+                <span class="command-action">Back to learning</span>
+            </li>
+            <li>
+                <span class="command-keyword">A-Z</span>
+                <span class="command-action">Answer letter</span>
+            </li>
+            <li>
+                <span class="command-keyword">hide</span>
+                <span class="command-action">Hide commands</span>
+            </li>
+            <li>
+                <span class="command-keyword">stop voice</span>
+                <span class="command-action">Deactivate voice</span>
+            </li>
+        </ul>
+        <div class="tip">
+            💡 Say "start voice" to activate, "show commands" to show panel!
+        </div>
+    </div>
+
+    <!-- Voice Status Indicator -->
+    <div class="voice-status active" id="voiceStatus">
+        <span class="voice-status-icon">🎤</span>
+        <span>Voice Active</span>
+    </div>
+
+    <script>
+        let currentQuizLetter = '';
+        let quizScore = 0;
+        let quizTotal = 0;
+        let quizStreak = 0;
+        let quizActive = false;
+        let recognition = null;
+        let isListening = false;
+        let commandsVisible = true;
+
+        // Show/hide voice commands panel
+        function toggleCommandsPanel() {
+            const panel = document.querySelector('.voice-commands-panel');
+            if (commandsVisible) {
+                panel.classList.add('hidden');
+                commandsVisible = false;
+                showStatus('Commands hidden. Say "show commands" to bring them back.', 'info');
+            } else {
+                panel.classList.remove('hidden');
+                commandsVisible = true;
+                showStatus('Commands shown!', 'success');
+            }
+        }
+
+        // Update voice status indicator
+        function updateVoiceStatus() {
+            const statusElement = document.getElementById('voiceStatus');
+            if (isListening) {
+                statusElement.classList.remove('inactive');
+                statusElement.classList.add('active');
+                statusElement.querySelector('.voice-status-icon').textContent = '🎤';
+                statusElement.querySelector('span:last-child').textContent = 'Voice Active';
+            } else {
+                statusElement.classList.remove('active');
+                statusElement.classList.add('inactive');
+                statusElement.querySelector('.voice-status-icon').textContent = '🔇';
+                statusElement.querySelector('span:last-child').textContent = 'Voice Inactive';
+            }
+        }
+
+        // Initialize the app
+        async function init() {
+            setupVoiceRecognition();
+            
+            // Auto-start voice recognition after a short delay
+            setTimeout(() => {
+                if (recognition) {
+                    toggleVoiceRecognition();
+                    showStatus('🎤 Quiz voice recognition started! Say "start quiz" to begin, or "learning" to go back!', 'info');
+                }
+            }, 1500);
+        }
+
+        // Setup voice recognition
+        function setupVoiceRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+                recognition.maxAlternatives = 5;
+
+                recognition.onresult = function(event) {
+                    const result = event.results[event.results.length - 1];
+                    if (result.isFinal) {
+                        for (let i = 0; i < result.length; i++) {
+                            const command = result[i].transcript.toLowerCase().trim();
+                            console.log('Trying alternative', i, ':', command);
+                            processVoiceCommand(command);
+                            
+                            if (document.getElementById('status').textContent.includes('Correct!') || 
+                                document.getElementById('status').textContent.includes('Incorrect')) {
+                                break;
+                            }
+                        }
+                    }
+                };
+
+                recognition.onerror = function(event) {
+                    console.error('Voice recognition error:', event.error);
+                    if (event.error === 'not-allowed') {
+                        showStatus('Microphone access denied. Please allow microphone permissions.', 'error');
+                    } else if (event.error === 'no-speech') {
+                        console.log('No speech detected, continuing...');
+                    } else {
+                        showStatus('Voice recognition error: ' + event.error, 'error');
+                    }
+                };
+
+                recognition.onend = function() {
+                    console.log('Voice recognition ended');
+                    if (isListening) {
+                        setTimeout(() => {
+                            if (isListening) {
+                                recognition.start();
+                            }
+                        }, 100);
+                    }
+                };
+
+                recognition.onstart = function() {
+                    console.log('Voice recognition started');
+                    showStatus('🎤 Listening... Say the letter you see!', 'info');
+                };
+            } else {
+                showStatus('Speech recognition not supported in this browser', 'error');
+            }
+        }
+
+        // Toggle voice recognition
+        function toggleVoiceRecognition() {
+            if (!recognition) {
+                showStatus('Voice recognition not available', 'error');
+                return;
+            }
+
+            if (!isListening) {
+                isListening = true;
+                recognition.start();
+                document.getElementById('voiceButton').textContent = '🛑 Stop Voice Commands';
+                document.getElementById('voiceButton').classList.add('listening');
+                updateVoiceStatus();
+            } else {
+                isListening = false;
+                recognition.stop();
+                document.getElementById('voiceButton').textContent = '🎤 Start Voice Commands';
+                document.getElementById('voiceButton').classList.remove('listening');
+                showStatus('Voice commands stopped. Click microphone to start again.', 'success');
+                updateVoiceStatus();
+            }
+        }
+
+        // Start quiz
+        function startQuiz() {
+            quizActive = true;
+            quizScore = 0;
+            quizTotal = 0;
+            quizStreak = 0;
+            updateQuizStats();
+            
+            document.getElementById('startQuizBtn').style.display = 'none';
+            document.getElementById('voiceButton').style.display = 'block';
+            document.getElementById('quizQuestion').style.display = 'block';
+            
+            nextQuizQuestion();
+            showStatus('Quiz started! Look at the ASL sign and say the letter.', 'info');
+        }
+
+        // Get next quiz question
+        async function nextQuizQuestion() {
+            if (!quizActive) return;
+            
+            try {
+                const response = await fetch('/api/quiz/random');
+                const data = await response.json();
+                
+                if (data.error) {
+                    showStatus('Error loading quiz: ' + data.error, 'error');
+                    return;
+                }
+                
+                currentQuizLetter = data.letter;
+                document.getElementById('quizImage').src = data.image_url;
+                document.getElementById('quizAnswer').style.display = 'none';
+                document.getElementById('nextQuizBtn').style.display = 'none';
+                
+                showStatus('What letter is this? Say it out loud!', 'info');
+                
+            } catch (error) {
+                console.error('Error loading quiz question:', error);
+                showStatus('Error loading quiz question: ' + error.message, 'error');
+            }
+        }
+
+        // Check quiz answer
+        function checkQuizAnswer(spokenLetter) {
+            if (!quizActive || !currentQuizLetter) return;
+            
+            quizTotal++;
+            const isCorrect = spokenLetter.toLowerCase() === currentQuizLetter.toLowerCase();
+            
+            if (isCorrect) {
+                quizScore++;
+                quizStreak++;
+                document.getElementById('quizAnswer').textContent = `✅ Correct! It's ${currentQuizLetter.toUpperCase()}`;
+                document.getElementById('quizAnswer').className = 'quiz-answer correct';
+                document.getElementById('quizAnswer').style.display = 'block';
+                showStatus(`🎉 Great job! You got it right!`, 'success');
+            } else {
+                quizStreak = 0;
+                document.getElementById('quizAnswer').textContent = `❌ Incorrect. The answer is ${currentQuizLetter.toUpperCase()}`;
+                document.getElementById('quizAnswer').className = 'quiz-answer incorrect';
+                document.getElementById('quizAnswer').style.display = 'block';
+                showStatus(`Not quite right. The answer was ${currentQuizLetter.toUpperCase()}`, 'error');
+            }
+            
+            document.getElementById('nextQuizBtn').style.display = 'inline-block';
+            updateQuizStats();
+        }
+
+        // Update quiz statistics
+        function updateQuizStats() {
+            document.getElementById('quizScore').textContent = `Score: ${quizScore}/${quizTotal}`;
+            document.getElementById('quizStreak').textContent = `Streak: ${quizStreak}`;
+        }
+
+        // Process voice command
+        function processVoiceCommand(command) {
+            console.log('Processing command:', command);
+            showStatus('Heard: "' + command + '"', 'info');
+            
+            const cleanCommand = command.toLowerCase().trim();
+            console.log('Clean command:', cleanCommand);
+            
+            // Check for navigation commands first
+            if (cleanCommand.includes('start quiz') || cleanCommand.includes('start') || cleanCommand.includes('begin')) {
+                if (!quizActive) {
+                    startQuiz();
+                    return;
+                }
+            } else if (cleanCommand.includes('learning') || cleanCommand.includes('back') || cleanCommand.includes('home')) {
+                showStatus('📚 Going back to learning mode...', 'info');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1000);
+                return;
+            } else if (cleanCommand.includes('next') || cleanCommand.includes('next question')) {
+                if (quizActive) {
+                    nextQuizQuestion();
+                    return;
+                }
+            } else if (cleanCommand.includes('hide commands') || cleanCommand.includes('hide')) {
+                toggleCommandsPanel();
+                return;
+            } else if (cleanCommand.includes('show commands') || cleanCommand.includes('show')) {
+                toggleCommandsPanel();
+                return;
+            } else if (cleanCommand.includes('start voice') || cleanCommand.includes('activate voice') || cleanCommand.includes('enable voice')) {
+                if (!isListening) {
+                    toggleVoiceRecognition();
+                    showStatus('🎤 Voice recognition activated!', 'success');
+                } else {
+                    showStatus('🎤 Voice recognition is already active!', 'info');
+                }
+                return;
+            } else if (cleanCommand.includes('stop voice') || cleanCommand.includes('deactivate voice') || cleanCommand.includes('disable voice')) {
+                if (isListening) {
+                    toggleVoiceRecognition();
+                    showStatus('🔇 Voice recognition deactivated!', 'info');
+                } else {
+                    showStatus('🔇 Voice recognition is already inactive!', 'info');
+                }
+                return;
+            }
+            
+            // Check for individual letters - be much more flexible
+            const letterMap = {
+                'a': 'a', 'ay': 'a', 'eh': 'a', 'ah': 'a', 'alpha': 'a',
+                'b': 'b', 'bee': 'b', 'be': 'b', 'bravo': 'b',
+                'c': 'c', 'see': 'c', 'sea': 'c', 'cee': 'c', 'charlie': 'c',
+                'd': 'd', 'dee': 'd', 'de': 'd', 'delta': 'd',
+                'e': 'e', 'ee': 'e', 'eh': 'e', 'echo': 'e',
+                'f': 'f', 'eff': 'f', 'ef': 'f', 'foxtrot': 'f',
+                'g': 'g', 'gee': 'g', 'je': 'g', 'golf': 'g',
+                'h': 'h', 'aitch': 'h', 'haitch': 'h', 'hotel': 'h',
+                'i': 'i', 'eye': 'i', 'ai': 'i', 'india': 'i',
+                'j': 'j', 'jay': 'j', 'jae': 'j', 'juliet': 'j',
+                'k': 'k', 'kay': 'k', 'ke': 'k', 'kilo': 'k',
+                'l': 'l', 'ell': 'l', 'el': 'l', 'lima': 'l',
+                'm': 'm', 'em': 'm', 'mike': 'm',
+                'n': 'n', 'en': 'n', 'november': 'n',
+                'o': 'o', 'oh': 'o', 'owe': 'o', 'oscar': 'o',
+                'p': 'p', 'pee': 'p', 'pe': 'p', 'papa': 'p',
+                'q': 'q', 'cue': 'q', 'queue': 'q', 'quebec': 'q',
+                'r': 'r', 'are': 'r', 'ar': 'r', 'romeo': 'r',
+                's': 's', 'ess': 's', 'es': 's', 'sierra': 's',
+                't': 't', 'tee': 't', 'te': 't', 'tango': 't',
+                'u': 'u', 'you': 'u', 'yew': 'u', 'uniform': 'u',
+                'v': 'v', 'vee': 'v', 've': 'v', 'victor': 'v',
+                'w': 'w', 'double u': 'w', 'double you': 'w', 'whiskey': 'w',
+                'x': 'x', 'ex': 'x', 'x-ray': 'x',
+                'y': 'y', 'why': 'y', 'wy': 'y', 'yankee': 'y',
+                'z': 'z', 'zee': 'z', 'zed': 'z', 'zulu': 'z'
+            };
+            
+            // Check if command matches any letter pronunciation
+            for (const [pronunciation, letter] of Object.entries(letterMap)) {
+                if (cleanCommand.includes(pronunciation)) {
+                    console.log('Found letter match:', pronunciation, '->', letter);
+                    checkQuizAnswer(letter);
+                    return;
+                }
+            }
+            
+            // If no letter found, show help
+            showStatus('Say a letter (A, B, C...) to answer the quiz!', 'error');
+        }
+
+        // Show status message
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+            statusDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        // Initialize when page loads
+        window.onload = init;
+    </script>
+</body>
+</html>
