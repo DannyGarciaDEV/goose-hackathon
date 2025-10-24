@@ -21,18 +21,39 @@ def handler(event, context):
         }
     
     try:
-        # Path to ASL dataset - In Netlify, the dataset is copied to root
-        dataset_path = Path("asl_dataset")
-        if not dataset_path.exists():
-            # Fallback to dist folder
-            dataset_path = Path("dist/asl_dataset")
-        if not dataset_path.exists():
-            # Another fallback
-            dataset_path = Path("/Users/dannygarcia/asl_learning_app/asl_dataset")
+        # Debug: Log everything
+        print(f"Event path: {event['path']}")
+        print(f"Current directory: {os.getcwd()}")
+        print(f"Directory contents: {os.listdir('.')}")
         
-        # Debug: Log the path being used
-        print(f"Looking for dataset at: {dataset_path}")
-        print(f"Dataset exists: {dataset_path.exists()}")
+        # Try multiple paths for the dataset
+        possible_paths = [
+            Path("asl_dataset"),
+            Path("dist/asl_dataset"),
+            Path("/asl_dataset"),
+            Path("/tmp/asl_dataset"),
+            Path(".")
+        ]
+        
+        dataset_path = None
+        for path in possible_paths:
+            print(f"Checking path: {path}")
+            if path.exists():
+                print(f"Found dataset at: {path}")
+                dataset_path = path
+                break
+        
+        if not dataset_path:
+            return {
+                'statusCode': 404,
+                'headers': headers,
+                'body': json.dumps({
+                    "error": "Dataset not found",
+                    "checked_paths": [str(p) for p in possible_paths],
+                    "current_dir": os.getcwd(),
+                    "dir_contents": os.listdir('.')
+                })
+            }
         
         # Get available letters
         letters = [d.name for d in dataset_path.iterdir() if d.is_dir()]
@@ -47,6 +68,7 @@ def handler(event, context):
         }
         
     except Exception as e:
+        print(f"Error: {str(e)}")
         return {
             'statusCode': 500,
             'headers': headers,

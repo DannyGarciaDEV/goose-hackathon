@@ -33,24 +33,44 @@ def handler(event, context):
         
         letter = path_parts[2]
         
-        # Path to ASL dataset - In Netlify, the dataset is copied to root
-        dataset_path = Path("asl_dataset")
-        if not dataset_path.exists():
-            # Fallback to dist folder
-            dataset_path = Path("dist/asl_dataset")
-        if not dataset_path.exists():
-            # Another fallback
-            dataset_path = Path("/Users/dannygarcia/asl_learning_app/asl_dataset")
+        # Debug: Log everything
+        print(f"Requested letter: {letter}")
+        print(f"Event path: {event['path']}")
+        print(f"Path parts: {path_parts}")
         
-        # Debug: Log the path being used
-        print(f"Looking for dataset at: {dataset_path}")
-        print(f"Dataset exists: {dataset_path.exists()}")
+        # Try multiple paths for the dataset
+        possible_paths = [
+            Path("asl_dataset"),
+            Path("dist/asl_dataset"),
+            Path("/asl_dataset"),
+            Path("/tmp/asl_dataset"),
+            Path(".")
+        ]
         
-        if not dataset_path.exists():
-            # List what's in the current directory
+        dataset_path = None
+        for path in possible_paths:
+            print(f"Checking path: {path}")
+            if path.exists():
+                print(f"Found dataset at: {path}")
+                dataset_path = path
+                break
+        
+        if not dataset_path:
+            # List what's available
             import os
-            print(f"Current directory contents: {os.listdir('.')}")
-            print(f"Root directory contents: {os.listdir('/')}")
+            print(f"Current directory: {os.getcwd()}")
+            print(f"Directory contents: {os.listdir('.')}")
+            
+            return {
+                'statusCode': 404,
+                'headers': headers,
+                'body': json.dumps({
+                    "error": "Dataset not found",
+                    "checked_paths": [str(p) for p in possible_paths],
+                    "current_dir": os.getcwd(),
+                    "dir_contents": os.listdir('.')
+                })
+            }
         
         letter_path = dataset_path / letter
         
@@ -61,8 +81,7 @@ def handler(event, context):
                 'body': json.dumps({
                     "error": f"Letter '{letter}' not found",
                     "dataset_path": str(dataset_path),
-                    "letter_path": str(letter_path),
-                    "dataset_exists": dataset_path.exists()
+                    "letter_path": str(letter_path)
                 })
             }
         
@@ -103,6 +122,7 @@ def handler(event, context):
         }
         
     except Exception as e:
+        print(f"Error: {str(e)}")
         return {
             'statusCode': 500,
             'headers': headers,
