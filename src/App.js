@@ -27,12 +27,17 @@ function App() {
   // Auto-start voice recognition
   useEffect(() => {
     const timer = setTimeout(() => {
+      console.log('🚀 Auto-starting voice recognition...');
       setupVoiceRecognition();
       if (recognitionRef.current) {
-        toggleVoiceRecognition();
-        showStatus('🎤 Voice recognition started! Say "quiz" to go to quiz mode, or say letters to learn!', 'info');
+        console.log('🎤 Starting voice recognition...');
+        recognitionRef.current.start();
+        setIsListening(true);
+        showStatus('🎤 Voice recognition active! Say commands like "next", "previous", "random", or letters like "A", "B", "C"', 'success');
+      } else {
+        showStatus('❌ Voice recognition not available. Please use Chrome or Edge browser.', 'error');
       }
-    }, 1500);
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -88,60 +93,83 @@ function App() {
       recognitionRef.current.maxAlternatives = 1; // Reduce to 1 for simpler processing
 
       recognitionRef.current.onstart = () => {
+        console.log('✅ Voice recognition started');
         setIsListening(true);
         updateVoiceStatus();
-        console.log('Voice recognition started');
         showStatus('🎤 Voice recognition active - say a command!', 'success');
       };
 
       recognitionRef.current.onresult = (event) => {
-        console.log('Voice recognition result:', event);
+        console.log('🎤 Voice recognition result:', event);
+        console.log('📊 Results length:', event.results.length);
         
         // Process the most recent result
         const last = event.results.length - 1;
         const result = event.results[last];
         
+        console.log('📝 Last result:', result);
+        console.log('🔍 Is final:', result.isFinal);
+        console.log('📄 Transcript:', result[0].transcript);
+        console.log('📊 Confidence:', result[0].confidence);
+        
         if (result.isFinal) {
           const command = result[0].transcript.toLowerCase().trim();
-          console.log(`Final voice command: "${command}"`);
-          console.log(`Confidence: ${result[0].confidence}`);
-          showStatus(`Heard: "${command}"`, 'info');
+          console.log(`🎯 Final voice command: "${command}"`);
+          showStatus(`🎤 Heard: "${command}"`, 'info');
           processVoiceCommand(command);
         }
       };
 
       recognitionRef.current.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
+        console.error('❌ Speech recognition error:', event.error);
         setIsListening(false);
         updateVoiceStatus();
         
         if (event.error === 'no-speech') {
+          console.log('🔄 No speech detected, restarting...');
           showStatus('No speech detected. Try speaking louder!', 'error');
           // Restart after a delay
           setTimeout(() => {
-            if (isListening) {
+            if (recognitionRef.current) {
+              console.log('🔄 Restarting voice recognition...');
               recognitionRef.current.start();
+              setIsListening(true);
             }
           }, 2000);
         } else if (event.error === 'not-allowed') {
-          showStatus('Microphone access denied. Please allow microphone access.', 'error');
+          console.log('❌ Microphone access denied');
+          showStatus('Microphone access denied. Please allow microphone access and refresh the page.', 'error');
         } else if (event.error === 'network') {
+          console.log('❌ Network error');
           showStatus('Network error. Check your internet connection.', 'error');
+        } else if (event.error === 'aborted') {
+          console.log('🔄 Voice recognition aborted, restarting...');
+          // Restart after a delay
+          setTimeout(() => {
+            if (recognitionRef.current) {
+              recognitionRef.current.start();
+              setIsListening(true);
+            }
+          }, 1000);
         } else {
-          showStatus(`Voice error: ${event.error}`, 'error');
+          console.log('❌ Unknown voice error:', event.error);
+          showStatus(`Voice error: ${event.error}. Try refreshing the page.`, 'error');
         }
       };
 
       recognitionRef.current.onend = () => {
-        console.log('Voice recognition ended');
+        console.log('🔄 Voice recognition ended');
         if (isListening) {
           // Restart recognition if it ended unexpectedly
+          console.log('🔄 Restarting voice recognition...');
           setTimeout(() => {
             if (recognitionRef.current && isListening) {
               recognitionRef.current.start();
+              console.log('✅ Voice recognition restarted');
             }
           }, 500);
         } else {
+          console.log('🔇 Voice recognition stopped by user');
           setIsListening(false);
           updateVoiceStatus();
         }
@@ -170,158 +198,209 @@ function App() {
   };
 
   const processVoiceCommand = (command) => {
+    console.log('🎤 VOICE COMMAND RECEIVED:', command);
+    
     if (!command || typeof command !== 'string') {
-      console.error('Invalid command:', command);
+      console.error('❌ Invalid command:', command);
       showStatus('Error: Invalid voice command', 'error');
       return;
     }
     
     const cleanCommand = command.toLowerCase().trim();
-    console.log('Processing command:', cleanCommand);
-    console.log('Current letters array length:', letters.length);
+    console.log('🧹 Cleaned command:', cleanCommand);
+    console.log('📊 Current state:', {
+      lettersLength: letters.length,
+      currentPage: currentPage,
+      isListening: isListening,
+      currentLetter: currentLetter
+    });
 
     // Check if letters are loaded first
     if (letters.length === 0) {
-      console.log('Letters not loaded yet, loading...');
+      console.log('⚠️ Letters not loaded yet, loading...');
       loadLetters();
       showStatus('Loading letters, please wait...', 'info');
       return;
     }
 
-    // Check for navigation commands first
-    if (cleanCommand.includes('quiz') || cleanCommand.includes('test') || cleanCommand.includes('challenge')) {
-      showStatus('🎯 Going to quiz mode...', 'info');
-      setTimeout(() => {
-        setCurrentPage('quiz');
-      }, 1000);
-      return;
-    } else if (cleanCommand.includes('learning') || cleanCommand.includes('back') || cleanCommand.includes('home')) {
-      showStatus('📚 Going back to learning mode...', 'info');
-      setTimeout(() => {
-        setCurrentPage('learning');
-      }, 1000);
-      return;
-    }
-
-    // Learning mode commands
-    if (currentPage === 'learning') {
-      if (cleanCommand.includes('next')) {
-        if (letters.length > 0) {
-          nextLetter();
-        } else {
-          showStatus('Error: No letters available', 'error');
-        }
-        return;
-      } else if (cleanCommand.includes('previous') || cleanCommand.includes('back')) {
-        if (letters.length > 0) {
-          previousLetter();
-        } else {
-          showStatus('Error: No letters available', 'error');
-        }
-        return;
-      } else if (cleanCommand.includes('random')) {
-        if (letters.length > 0) {
-          randomLetter();
-        } else {
-          showStatus('Error: No letters available', 'error');
-        }
-        return;
-      } else if (cleanCommand.includes('repeat')) {
-        if (currentLetter && letters.includes(currentLetter)) {
+    // EXACT MATCH COMMANDS (most reliable)
+    const exactCommands = {
+      'next': () => {
+        console.log('✅ NEXT command detected');
+        nextLetter();
+        return true;
+      },
+      'previous': () => {
+        console.log('✅ PREVIOUS command detected');
+        previousLetter();
+        return true;
+      },
+      'random': () => {
+        console.log('✅ RANDOM command detected');
+        randomLetter();
+        return true;
+      },
+      'repeat': () => {
+        console.log('✅ REPEAT command detected');
+        if (currentLetter) {
           showLetter(currentLetter);
           showStatus(`Showing letter ${currentLetter.toUpperCase()} again`, 'info');
-        } else {
-          showStatus('Error: No current letter to repeat', 'error');
         }
-        return;
+        return true;
+      },
+      'quiz': () => {
+        console.log('✅ QUIZ command detected');
+        showStatus('🎯 Going to quiz mode...', 'info');
+        setTimeout(() => setCurrentPage('quiz'), 1000);
+        return true;
+      },
+      'learning': () => {
+        console.log('✅ LEARNING command detected');
+        showStatus('📚 Going back to learning mode...', 'info');
+        setTimeout(() => setCurrentPage('learning'), 1000);
+        return true;
+      },
+      'hide': () => {
+        console.log('✅ HIDE commands detected');
+        setCommandsVisible(false);
+        showStatus('Commands hidden. Say "show" to bring them back.', 'info');
+        return true;
+      },
+      'show': () => {
+        console.log('✅ SHOW commands detected');
+        setCommandsVisible(true);
+        showStatus('Commands shown!', 'success');
+        return true;
+      },
+      'stop voice': () => {
+        console.log('✅ STOP VOICE command detected');
+        if (isListening) {
+          toggleVoiceRecognition();
+          showStatus('🔇 Voice recognition deactivated!', 'info');
+        }
+        return true;
+      },
+      'start voice': () => {
+        console.log('✅ START VOICE command detected');
+        if (!isListening) {
+          toggleVoiceRecognition();
+          showStatus('🎤 Voice recognition activated!', 'success');
+        }
+        return true;
+      }
+    };
+
+    // Check exact matches first
+    for (const [cmd, handler] of Object.entries(exactCommands)) {
+      if (cleanCommand === cmd) {
+        return handler();
       }
     }
 
-    // Quiz mode commands
-    if (currentPage === 'quiz') {
-      if (cleanCommand.includes('start quiz') || cleanCommand.includes('start') || cleanCommand.includes('begin')) {
-        if (!quizActive) {
-          if (letters.length > 0) {
-            startQuiz();
-          } else {
-            showStatus('Error: No letters available for quiz', 'error');
-          }
-          return;
-        }
-      } else if (cleanCommand.includes('next') || cleanCommand.includes('next question')) {
-        if (quizActive) {
-          nextQuizQuestion();
-          return;
-        }
-      }
+    // CONTAINS MATCHES (for partial matches)
+    if (cleanCommand.includes('next')) {
+      console.log('✅ NEXT (contains) command detected');
+      nextLetter();
+      return;
     }
-
-    // Voice control commands
-    if (cleanCommand.includes('start voice') || cleanCommand.includes('activate voice') || cleanCommand.includes('enable voice')) {
-      if (!isListening) {
-        toggleVoiceRecognition();
-        showStatus('🎤 Voice recognition activated!', 'success');
-      } else {
-        showStatus('🎤 Voice recognition is already active!', 'info');
+    
+    if (cleanCommand.includes('previous')) {
+      console.log('✅ PREVIOUS (contains) command detected');
+      previousLetter();
+      return;
+    }
+    
+    if (cleanCommand.includes('random')) {
+      console.log('✅ RANDOM (contains) command detected');
+      randomLetter();
+      return;
+    }
+    
+    if (cleanCommand.includes('repeat')) {
+      console.log('✅ REPEAT (contains) command detected');
+      if (currentLetter) {
+        showLetter(currentLetter);
+        showStatus(`Showing letter ${currentLetter.toUpperCase()} again`, 'info');
       }
       return;
-    } else if (cleanCommand.includes('stop voice') || cleanCommand.includes('deactivate voice') || cleanCommand.includes('disable voice')) {
-      if (isListening) {
-        toggleVoiceRecognition();
-        showStatus('🔇 Voice recognition deactivated!', 'info');
-      } else {
-        showStatus('🔇 Voice recognition is already inactive!', 'info');
-      }
+    }
+    
+    if (cleanCommand.includes('quiz')) {
+      console.log('✅ QUIZ (contains) command detected');
+      showStatus('🎯 Going to quiz mode...', 'info');
+      setTimeout(() => setCurrentPage('quiz'), 1000);
       return;
-    } else if (cleanCommand.includes('hide commands') || cleanCommand.includes('hide')) {
+    }
+    
+    if (cleanCommand.includes('learning') || cleanCommand.includes('back') || cleanCommand.includes('home')) {
+      console.log('✅ LEARNING (contains) command detected');
+      showStatus('📚 Going back to learning mode...', 'info');
+      setTimeout(() => setCurrentPage('learning'), 1000);
+      return;
+    }
+    
+    if (cleanCommand.includes('hide')) {
+      console.log('✅ HIDE (contains) command detected');
       setCommandsVisible(false);
-      showStatus('Commands hidden. Say "show commands" to bring them back.', 'info');
+      showStatus('Commands hidden. Say "show" to bring them back.', 'info');
       return;
-    } else if (cleanCommand.includes('show commands') || cleanCommand.includes('show')) {
+    }
+    
+    if (cleanCommand.includes('show')) {
+      console.log('✅ SHOW (contains) command detected');
       setCommandsVisible(true);
       showStatus('Commands shown!', 'success');
       return;
     }
-
-    // Enhanced letter detection - simplified for better reliability
-    let detectedLetter = null;
     
-    console.log('Looking for letter in command:', cleanCommand);
-    
-    // Pattern 1: Direct letter match (most reliable) - check if command is exactly one letter
-    if (cleanCommand.length === 1 && /[a-zA-Z]/.test(cleanCommand)) {
-      detectedLetter = cleanCommand.toLowerCase();
-      console.log('Direct single letter match:', detectedLetter);
+    if (cleanCommand.includes('stop voice') || cleanCommand.includes('deactivate voice')) {
+      console.log('✅ STOP VOICE (contains) command detected');
+      if (isListening) {
+        toggleVoiceRecognition();
+        showStatus('🔇 Voice recognition deactivated!', 'info');
+      }
+      return;
     }
     
-    // Pattern 2: Direct letter match with word boundaries
+    if (cleanCommand.includes('start voice') || cleanCommand.includes('activate voice')) {
+      console.log('✅ START VOICE (contains) command detected');
+      if (!isListening) {
+        toggleVoiceRecognition();
+        showStatus('🎤 Voice recognition activated!', 'success');
+      }
+      return;
+    }
+
+    // LETTER DETECTION
+    console.log('🔤 Looking for letter in command:', cleanCommand);
+    
+    let detectedLetter = null;
+    
+    // Pattern 1: Single letter (most reliable)
+    if (cleanCommand.length === 1 && /[a-zA-Z]/.test(cleanCommand)) {
+      detectedLetter = cleanCommand.toLowerCase();
+      console.log('✅ Direct single letter match:', detectedLetter);
+    }
+    
+    // Pattern 2: Letter at start
     if (!detectedLetter) {
-      const directMatch = cleanCommand.match(/^(a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z)$/);
-      if (directMatch) {
-        detectedLetter = directMatch[1];
-        console.log('Direct letter match:', detectedLetter);
+      const startMatch = cleanCommand.match(/^([a-zA-Z])/);
+      if (startMatch) {
+        detectedLetter = startMatch[1].toLowerCase();
+        console.log('✅ Letter at start match:', detectedLetter);
       }
     }
     
-    // Pattern 3: Single letter word boundaries
+    // Pattern 3: Letter with word boundaries
     if (!detectedLetter) {
       const letterMatch = cleanCommand.match(/\b([a-zA-Z])\b/);
       if (letterMatch) {
         detectedLetter = letterMatch[1].toLowerCase();
-        console.log('Word boundary match:', detectedLetter);
+        console.log('✅ Word boundary letter match:', detectedLetter);
       }
     }
     
-    // Pattern 4: Letter at start of command
-    if (!detectedLetter) {
-      const startMatch = cleanCommand.match(/^([a-zA-Z])\b/);
-      if (startMatch) {
-        detectedLetter = startMatch[1].toLowerCase();
-        console.log('Start of command match:', detectedLetter);
-      }
-    }
-    
-    // Pattern 5: Common letter pronunciations (simplified)
+    // Pattern 4: Common pronunciations
     if (!detectedLetter) {
       const pronunciations = {
         'ay': 'a', 'eh': 'a', 'ah': 'a',
@@ -355,43 +434,28 @@ function App() {
       for (const [pronunciation, letter] of Object.entries(pronunciations)) {
         if (cleanCommand.includes(pronunciation)) {
           detectedLetter = letter;
-          console.log('Pronunciation match:', pronunciation, '->', letter);
+          console.log('✅ Pronunciation match:', pronunciation, '->', letter);
           break;
         }
       }
     }
     
-    console.log('Final detected letter:', detectedLetter);
-    console.log('Letters array:', letters);
-    console.log('Is detected letter in letters array?', letters.includes(detectedLetter));
+    console.log('🎯 Final detected letter:', detectedLetter);
 
-    if (detectedLetter) {
-      // Check if letters array is loaded
-      if (letters.length === 0) {
-        console.log('Letters array is empty, reloading...');
-        loadLetters();
-        showStatus('Loading letters, please try again...', 'info');
-        return;
+    if (detectedLetter && letters.includes(detectedLetter)) {
+      console.log('✅ Valid letter detected:', detectedLetter);
+      if (currentPage === 'learning') {
+        showLetter(detectedLetter);
+        showStatus(`Showing letter ${detectedLetter.toUpperCase()}`, 'success');
+      } else if (currentPage === 'quiz' && quizActive) {
+        checkQuizAnswer(detectedLetter);
       }
-      
-      // Check if detected letter is in the letters array
-      if (letters.includes(detectedLetter)) {
-        if (currentPage === 'learning') {
-          showLetter(detectedLetter);
-          showStatus(`Showing letter ${detectedLetter.toUpperCase()}`, 'success');
-        } else if (currentPage === 'quiz' && quizActive) {
-          checkQuizAnswer(detectedLetter);
-        }
-        return;
-      } else {
-        console.log('Detected letter not in letters array:', detectedLetter);
-        showStatus(`Letter "${detectedLetter.toUpperCase()}" not found in available letters`, 'error');
-        return;
-      }
+      return;
     }
 
-    // If no command matched, show help
-    showStatus(`Command not recognized: "${cleanCommand}". Try saying "next", "previous", "random", or a letter like "A"`, 'error');
+    // No command matched
+    console.log('❌ No command matched:', cleanCommand);
+    showStatus(`Command not recognized: "${cleanCommand}". Try: "next", "previous", "random", "quiz", or a letter like "A"`, 'error');
   };
 
   const showLetter = (letter) => {
@@ -558,6 +622,7 @@ function App() {
                 }}
               />
             </div>
+
 
             <div className="voice-button-container">
               <button 
