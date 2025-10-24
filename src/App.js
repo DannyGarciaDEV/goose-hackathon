@@ -97,9 +97,27 @@ function App() {
 
   const processVoiceCommand = (command) => {
     const cleanCommand = command.toLowerCase().trim();
+    console.log('Processing voice command:', cleanCommand);
+    
+    // Quiz controls - check these first
+    if (cleanCommand.includes('start quiz')) {
+      console.log('Starting quiz command detected');
+      setCurrentPage('quiz');
+      setCommandsVisible(true);
+      setTimeout(() => {
+        startQuiz();
+      }, 100);
+      showStatus('Starting quiz...');
+      return;
+    }
+    
+    if (cleanCommand.includes('next question') && quizActive) {
+      nextQuizQuestion();
+      return;
+    }
     
     // Navigation commands
-    if (cleanCommand.includes('quiz') || cleanCommand.includes('start quiz')) {
+    if (cleanCommand.includes('quiz')) {
       setCurrentPage('quiz');
       setCommandsVisible(true);
       showStatus('Going to quiz mode...');
@@ -115,25 +133,16 @@ function App() {
     
     // Command visibility controls
     if (cleanCommand.includes('hide commands')) {
+      console.log('Hide commands detected');
       setCommandsVisible(false);
       showStatus('Commands hidden. Say "show commands" to bring them back.');
       return;
     }
     
     if (cleanCommand.includes('show commands')) {
+      console.log('Show commands detected');
       setCommandsVisible(true);
       showStatus('Commands shown!');
-      return;
-    }
-    
-    // Quiz controls
-    if (cleanCommand.includes('start quiz') && currentPage === 'quiz') {
-      startQuiz();
-      return;
-    }
-    
-    if (cleanCommand.includes('next question') && quizActive) {
-      nextQuizQuestion();
       return;
     }
     
