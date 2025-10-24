@@ -40,8 +40,9 @@ def handler(event, context):
         
         # Try multiple paths for the dataset
         possible_paths = [
-            Path("asl_dataset"),
+            Path("./dist/asl_dataset"),
             Path("dist/asl_dataset"),
+            Path("asl_dataset"),
             Path("/asl_dataset"),
             Path("/tmp/asl_dataset"),
             Path(".")

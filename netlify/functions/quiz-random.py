@@ -22,14 +22,28 @@ def handler(event, context):
         }
     
     try:
-        # Path to ASL dataset - In Netlify, the dataset is copied to root
-        dataset_path = Path("asl_dataset")
-        if not dataset_path.exists():
-            # Fallback to dist folder
-            dataset_path = Path("dist/asl_dataset")
-        if not dataset_path.exists():
-            # Another fallback
-            dataset_path = Path("/Users/dannygarcia/asl_learning_app/asl_dataset")
+        # Try multiple paths for the dataset
+        possible_paths = [
+            Path("./dist/asl_dataset"),
+            Path("dist/asl_dataset"),
+            Path("asl_dataset"),
+            Path("/asl_dataset"),
+            Path("/tmp/asl_dataset"),
+            Path(".")
+        ]
+        
+        dataset_path = None
+        for path in possible_paths:
+            if path.exists():
+                dataset_path = path
+                break
+        
+        if not dataset_path:
+            return {
+                'statusCode': 404,
+                'headers': headers,
+                'body': json.dumps({"error": "Dataset not found"})
+            }
         
         # Get available letters
         letters = [d.name for d in dataset_path.iterdir() if d.is_dir()]
