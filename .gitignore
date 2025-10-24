@@ -58,3 +58,4 @@ yarn-error.log*
 # Private deployment files
 PRIVATE_DEPLOYMENT.md
 deploy_netlify.sh
+.gitignore
