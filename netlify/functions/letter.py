@@ -34,13 +34,13 @@ def handler(event, context):
         letter = path_parts[2]
         
         # Path to ASL dataset - Netlify functions run from root, so look for dist/asl_dataset
-        dataset_path = Path("dist/asl_dataset")
+        dataset_path = Path("/asl_dataset")
         if not dataset_path.exists():
             # Fallback for local development
             dataset_path = Path("asl_dataset")
         if not dataset_path.exists():
             # Another fallback
-            dataset_path = Path("/Users/dannygarcia/asl_learning_app/asl_dataset")
+            dataset_path = Path("/asl_dataset")
         
         # Debug: Log the path being used
         print(f"Looking for dataset at: {dataset_path}")
