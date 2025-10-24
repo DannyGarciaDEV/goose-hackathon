@@ -268,14 +268,22 @@ function App() {
     
     console.log('Looking for letter in command:', cleanCommand);
     
-    // Pattern 1: Direct letter match (most reliable)
-    const directMatch = cleanCommand.match(/^(a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z)$/);
-    if (directMatch) {
-      detectedLetter = directMatch[1];
-      console.log('Direct letter match:', detectedLetter);
+    // Pattern 1: Direct letter match (most reliable) - check if command is exactly one letter
+    if (cleanCommand.length === 1 && /[a-zA-Z]/.test(cleanCommand)) {
+      detectedLetter = cleanCommand.toLowerCase();
+      console.log('Direct single letter match:', detectedLetter);
     }
     
-    // Pattern 2: Single letter word boundaries
+    // Pattern 2: Direct letter match with word boundaries
+    if (!detectedLetter) {
+      const directMatch = cleanCommand.match(/^(a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z)$/);
+      if (directMatch) {
+        detectedLetter = directMatch[1];
+        console.log('Direct letter match:', detectedLetter);
+      }
+    }
+    
+    // Pattern 3: Single letter word boundaries
     if (!detectedLetter) {
       const letterMatch = cleanCommand.match(/\b([a-zA-Z])\b/);
       if (letterMatch) {
@@ -284,7 +292,16 @@ function App() {
       }
     }
     
-    // Pattern 3: Common letter pronunciations (simplified)
+    // Pattern 4: Letter at start of command
+    if (!detectedLetter) {
+      const startMatch = cleanCommand.match(/^([a-zA-Z])\b/);
+      if (startMatch) {
+        detectedLetter = startMatch[1].toLowerCase();
+        console.log('Start of command match:', detectedLetter);
+      }
+    }
+    
+    // Pattern 5: Common letter pronunciations (simplified)
     if (!detectedLetter) {
       const pronunciations = {
         'ay': 'a', 'eh': 'a', 'ah': 'a',
@@ -325,15 +342,32 @@ function App() {
     }
     
     console.log('Final detected letter:', detectedLetter);
+    console.log('Letters array:', letters);
+    console.log('Is detected letter in letters array?', letters.includes(detectedLetter));
 
-    if (detectedLetter && letters.includes(detectedLetter)) {
-      if (currentPage === 'learning') {
-        showLetter(detectedLetter);
-        showStatus(`Showing letter ${detectedLetter.toUpperCase()}`, 'success');
-      } else if (currentPage === 'quiz' && quizActive) {
-        checkQuizAnswer(detectedLetter);
+    if (detectedLetter) {
+      // Check if letters array is loaded
+      if (letters.length === 0) {
+        console.log('Letters array is empty, reloading...');
+        loadLetters();
+        showStatus('Loading letters, please try again...', 'info');
+        return;
       }
-      return;
+      
+      // Check if detected letter is in the letters array
+      if (letters.includes(detectedLetter)) {
+        if (currentPage === 'learning') {
+          showLetter(detectedLetter);
+          showStatus(`Showing letter ${detectedLetter.toUpperCase()}`, 'success');
+        } else if (currentPage === 'quiz' && quizActive) {
+          checkQuizAnswer(detectedLetter);
+        }
+        return;
+      } else {
+        console.log('Detected letter not in letters array:', detectedLetter);
+        showStatus(`Letter "${detectedLetter.toUpperCase()}" not found in available letters`, 'error');
+        return;
+      }
     }
 
     // If no command matched, show help
