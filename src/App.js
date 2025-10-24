@@ -20,6 +20,7 @@ function App() {
 
   // Load available letters
   useEffect(() => {
+    console.log('Component mounted, loading letters...');
     loadLetters();
   }, []);
 
@@ -41,11 +42,21 @@ function App() {
       // For local development, use the dataset directly
       const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
       
+      console.log('Loading letters:', letters);
+      
       if (letters && letters.length > 0) {
         setLetters(letters);
-        console.log('Loaded', letters.length, 'letters');
+        console.log('Successfully loaded', letters.length, 'letters');
         showStatus(`Loaded ${letters.length} ASL letters`, 'success');
+        
+        // Set initial letter if not already set
+        if (!currentLetter) {
+          setCurrentLetter('a');
+          setCurrentLetterIndex(0);
+          console.log('Set initial letter to A');
+        }
       } else {
+        console.error('No letters loaded');
         showStatus('Error: No letters loaded', 'error');
       }
     } catch (error) {
@@ -167,6 +178,15 @@ function App() {
     
     const cleanCommand = command.toLowerCase().trim();
     console.log('Processing command:', cleanCommand);
+    console.log('Current letters array length:', letters.length);
+
+    // Check if letters are loaded first
+    if (letters.length === 0) {
+      console.log('Letters not loaded yet, loading...');
+      loadLetters();
+      showStatus('Loading letters, please wait...', 'info');
+      return;
+    }
 
     // Check for navigation commands first
     if (cleanCommand.includes('quiz') || cleanCommand.includes('test') || cleanCommand.includes('challenge')) {
