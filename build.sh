@@ -26,6 +26,10 @@ cp frontend/voice_only.html dist/index.html
 echo "📄 Creating quiz.html..."
 cp frontend/quiz.html dist/quiz.html
 
+# Create debug.html
+echo "📄 Creating debug.html..."
+cp frontend/debug.html dist/debug.html
+
 # Remove problematic requirements.txt from dist to prevent pip install
 echo "🧹 Cleaning up dependencies..."
 rm -f dist/requirements.txt

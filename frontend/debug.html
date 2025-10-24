@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASL App Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        .result {
+            background: #f5f5f5;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            white-space: pre-wrap;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .success {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <h1>ASL Learning App Debug</h1>
+    
+    <div class="test-section">
+        <h2>1. Test Letters API</h2>
+        <button onclick="testLettersAPI()">Test /api/letters</button>
+        <button onclick="testLettersDirect()">Test /.netlify/functions/letters</button>
+        <div id="lettersResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Test Image API</h2>
+        <button onclick="testImageAPI()">Test /api/letter/a</button>
+        <button onclick="testImageDirect()">Test /.netlify/functions/letter/a</button>
+        <div id="imageResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Test Voice Recognition</h2>
+        <button onclick="testVoiceRecognition()">Test Voice Recognition</button>
+        <div id="voiceResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. Test HTTPS</h2>
+        <div id="httpsResult" class="result"></div>
+    </div>
+
+    <script>
+        // Test Letters API
+        async function testLettersAPI() {
+            const resultDiv = document.getElementById('lettersResult');
+            resultDiv.textContent = 'Testing /api/letters...';
+            
+            try {
+                const response = await fetch('/api/letters');
+                const data = await response.json();
+                resultDiv.textContent = `Success: ${JSON.stringify(data, null, 2)}`;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        async function testLettersDirect() {
+            const resultDiv = document.getElementById('lettersResult');
+            resultDiv.textContent = 'Testing /.netlify/functions/letters...';
+            
+            try {
+                const response = await fetch('/.netlify/functions/letters');
+                const data = await response.json();
+                resultDiv.textContent = `Success: ${JSON.stringify(data, null, 2)}`;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        // Test Image API
+        async function testImageAPI() {
+            const resultDiv = document.getElementById('imageResult');
+            resultDiv.textContent = 'Testing /api/letter/a...';
+            
+            try {
+                const response = await fetch('/api/letter/a');
+                if (response.ok) {
+                    resultDiv.textContent = `Success: Image loaded (${response.headers.get('content-type')})`;
+                    resultDiv.className = 'result success';
+                } else {
+                    const data = await response.json();
+                    resultDiv.textContent = `Error: ${JSON.stringify(data, null, 2)}`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        async function testImageDirect() {
+            const resultDiv = document.getElementById('imageResult');
+            resultDiv.textContent = 'Testing /.netlify/functions/letter/a...';
+            
+            try {
+                const response = await fetch('/.netlify/functions/letter/a');
+                if (response.ok) {
+                    resultDiv.textContent = `Success: Image loaded (${response.headers.get('content-type')})`;
+                    resultDiv.className = 'result success';
+                } else {
+                    const data = await response.json();
+                    resultDiv.textContent = `Error: ${JSON.stringify(data, null, 2)}`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.textContent = `Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        // Test Voice Recognition
+        function testVoiceRecognition() {
+            const resultDiv = document.getElementById('voiceResult');
+            
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                resultDiv.textContent = 'Voice recognition is supported!';
+                resultDiv.className = 'result success';
+                
+                // Try to start recognition
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                const recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                
+                recognition.onstart = () => {
+                    resultDiv.textContent += '\nVoice recognition started successfully!';
+                };
+                
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    resultDiv.textContent += `\nHeard: "${transcript}"`;
+                };
+                
+                recognition.onerror = (event) => {
+                    resultDiv.textContent += `\nError: ${event.error}`;
+                    resultDiv.className = 'result error';
+                };
+                
+                try {
+                    recognition.start();
+                } catch (error) {
+                    resultDiv.textContent += `\nFailed to start: ${error.message}`;
+                    resultDiv.className = 'result error';
+                }
+            } else {
+                resultDiv.textContent = 'Voice recognition is NOT supported in this browser';
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        // Test HTTPS
+        function testHTTPS() {
+            const resultDiv = document.getElementById('httpsResult');
+            const isHTTPS = location.protocol === 'https:';
+            
+            if (isHTTPS) {
+                resultDiv.textContent = '✅ HTTPS is enabled - Voice recognition should work';
+                resultDiv.className = 'result success';
+            } else {
+                resultDiv.textContent = '❌ HTTPS is NOT enabled - Voice recognition will not work';
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        // Run HTTPS test on load
+        window.onload = testHTTPS;
+    </script>
+</body>
+</html>
