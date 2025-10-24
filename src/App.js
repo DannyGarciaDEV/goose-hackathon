@@ -199,9 +199,11 @@ function App() {
   };
 
   const startQuiz = () => {
+    console.log('Starting quiz...');
     setQuizActive(true);
     setQuizScore(0);
     setQuizTotal(0);
+    console.log('Quiz active set to true');
     nextQuizQuestion();
     showStatus('Quiz started! Look at the ASL sign and say the letter!');
   };
@@ -211,6 +213,9 @@ function App() {
     
     const randomIndex = Math.floor(Math.random() * letters.length);
     const randomLetter = letters[randomIndex];
+    
+    console.log('Next quiz question - random letter:', randomLetter);
+    console.log('Image URL will be:', getImageUrl(randomLetter));
     
     if (randomLetter) {
       setCurrentQuizLetter(randomLetter);
@@ -421,11 +426,15 @@ function App() {
                 {currentQuizLetter && (
                   <div className="quiz-question">
                     <h3>What letter is this?</h3>
+                    <p>Debug: Current quiz letter is "{currentQuizLetter}"</p>
+                    <p>Debug: Image URL is "{getImageUrl(currentQuizLetter)}"</p>
                     <img 
                       src={getImageUrl(currentQuizLetter)} 
                       alt={`ASL sign for ${currentQuizLetter}`}
                       className="asl-image"
+                      onLoad={() => console.log('Quiz image loaded successfully')}
                       onError={(e) => {
+                        console.log('Quiz image failed to load:', e.target.src);
                         e.target.style.display = 'none';
                         showStatus(`Image not found for letter ${currentQuizLetter.toUpperCase()}`);
                       }}
