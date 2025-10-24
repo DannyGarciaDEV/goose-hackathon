@@ -1,0 +1,21 @@
+[build]
+  publish = "dist"
+  command = "./build.sh"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[dev]
+  command = "python3 backend/voice_only_app.py"
+  port = 5001
+  publish = "frontend"
