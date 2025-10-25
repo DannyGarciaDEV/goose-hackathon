@@ -6,14 +6,7 @@ function App() {
   const [letters] = useState(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']);
   const [isListening, setIsListening] = useState(false);
   const [status, setStatus] = useState('');
-  const [currentPage, setCurrentPage] = useState('learning');
   const [commandsVisible, setCommandsVisible] = useState(true);
-  
-  // Quiz state
-  const [quizActive, setQuizActive] = useState(false);
-  const [quizScore, setQuizScore] = useState(0);
-  const [quizTotal, setQuizTotal] = useState(0);
-  const [currentQuizLetter, setCurrentQuizLetter] = useState('');
 
   const recognitionRef = useRef(null);
 
@@ -101,41 +94,6 @@ function App() {
     const cleanCommand = command.toLowerCase().trim();
     console.log('Processing voice command:', cleanCommand);
     
-    // Quiz controls - check these first
-    if (cleanCommand.includes('start quiz') || 
-        cleanCommand.includes('start the quiz') ||
-        cleanCommand.includes('begin quiz') ||
-        (cleanCommand.includes('start') && currentPage === 'quiz')) {
-      console.log('Starting quiz command detected');
-      setCurrentPage('quiz');
-      setCommandsVisible(true);
-      setTimeout(() => {
-        startQuiz();
-      }, 100);
-      showStatus('Starting quiz...');
-      return;
-    }
-    
-    if (cleanCommand.includes('next question') && quizActive) {
-      nextQuizQuestion();
-      return;
-    }
-    
-    // Navigation commands
-    if (cleanCommand.includes('quiz')) {
-      setCurrentPage('quiz');
-      setCommandsVisible(true);
-      showStatus('Going to quiz mode...');
-      return;
-    }
-    
-    if (cleanCommand.includes('learning') || cleanCommand.includes('back to learning')) {
-      setCurrentPage('learning');
-      setQuizActive(false);
-      showStatus('Going back to learning mode...');
-      return;
-    }
-    
     // Command visibility controls
     if (cleanCommand.includes('hide commands')) {
       console.log('Hide commands detected');
@@ -151,7 +109,7 @@ function App() {
       return;
     }
     
-    // Letter detection for both learning and quiz
+    // Letter detection
     let detectedLetter = null;
     
     // Check if it's a single letter
@@ -188,76 +146,12 @@ function App() {
     
     if (detectedLetter && letters.includes(detectedLetter)) {
       console.log('Letter detected:', detectedLetter);
-      console.log('Current page:', currentPage);
-      console.log('Quiz active:', quizActive);
-      
-      if (currentPage === 'learning') {
-        setCurrentLetter(detectedLetter);
-        showStatus(`Showing letter ${detectedLetter.toUpperCase()}`);
-      } else if (currentPage === 'quiz' && quizActive) {
-        console.log('Checking quiz answer:', detectedLetter, 'against:', currentQuizLetter);
-        checkQuizAnswer(detectedLetter);
-      }
+      setCurrentLetter(detectedLetter);
+      showStatus(`Showing letter ${detectedLetter.toUpperCase()}`);
     } else {
       console.log('No letter detected or letter not in letters array');
       showStatus(`Command not recognized: "${command}"`);
     }
-  };
-
-  const startQuiz = () => {
-    console.log('Starting quiz...');
-    setQuizActive(true);
-    setQuizScore(0);
-    setQuizTotal(0);
-    console.log('Quiz active set to true');
-    
-    // Use setTimeout to ensure state is updated before calling nextQuizQuestion
-    setTimeout(() => {
-      nextQuizQuestion();
-    }, 100);
-    
-    showStatus('Quiz started! Look at the ASL sign and say the letter!');
-  };
-
-  const nextQuizQuestion = () => {
-    console.log('nextQuizQuestion called');
-    
-    const randomIndex = Math.floor(Math.random() * letters.length);
-    const randomLetter = letters[randomIndex];
-    
-    console.log('Next quiz question - random letter:', randomLetter);
-    console.log('Image URL will be:', getImageUrl(randomLetter));
-    
-    if (randomLetter) {
-      setCurrentQuizLetter(randomLetter);
-      setQuizTotal(prev => prev + 1);
-      showStatus(`Quiz question ${quizTotal + 1}: What letter is this?`);
-    }
-  };
-
-  const checkQuizAnswer = (answer) => {
-    console.log('checkQuizAnswer called with:', answer);
-    console.log('quizActive:', quizActive);
-    console.log('currentQuizLetter:', currentQuizLetter);
-    
-    if (!quizActive || !currentQuizLetter) {
-      console.log('Quiz not active or no current letter, returning');
-      return;
-    }
-    
-    const isCorrect = answer.toLowerCase() === currentQuizLetter.toLowerCase();
-    console.log('Answer comparison:', answer.toLowerCase(), '===', currentQuizLetter.toLowerCase(), '=', isCorrect);
-    
-    if (isCorrect) {
-      setQuizScore(prev => prev + 1);
-      showStatus(`✅ Correct! It was ${currentQuizLetter.toUpperCase()}`);
-    } else {
-      showStatus(`❌ Wrong! It was ${currentQuizLetter.toUpperCase()}`);
-    }
-    
-    setTimeout(() => {
-      nextQuizQuestion();
-    }, 2000);
   };
 
   const getImageUrl = (letter) => {
@@ -270,20 +164,6 @@ function App() {
       <nav className="navbar">
         <div className="navbar-brand">
           🤟 ASL Learning
-        </div>
-        <div className="navbar-nav">
-          <div 
-            className={`nav-link ${currentPage === 'learning' ? 'active' : ''}`}
-            onClick={() => setCurrentPage('learning')}
-          >
-            📚 Learning
-          </div>
-          <div 
-            className={`nav-link ${currentPage === 'quiz' ? 'active' : ''}`}
-            onClick={() => setCurrentPage('quiz')}
-          >
-            🎯 Quiz
-          </div>
         </div>
         <div className="voice-status">
           <span className="voice-icon">{isListening ? '🎤' : '🔇'}</span>
@@ -312,38 +192,6 @@ function App() {
           </div>
           <div className="commands-content">
             <div className="command-section">
-              <h5>🧭 Navigation</h5>
-              <div className="command-item">
-                <span className="command-phrase">"quiz"</span>
-                <span className="command-action">Go to quiz mode</span>
-              </div>
-              <div className="command-item">
-                <span className="command-phrase">"learning"</span>
-                <span className="command-action">Back to learning</span>
-              </div>
-            </div>
-            
-            <div className="command-section">
-              <h5>🎯 Quiz</h5>
-              <div className="command-item">
-                <span className="command-phrase">"start quiz"</span>
-                <span className="command-action">Begin quiz</span>
-              </div>
-              <div className="command-item">
-                <span className="command-phrase">"start"</span>
-                <span className="command-action">Start quiz (in quiz mode)</span>
-              </div>
-              <div className="command-item">
-                <span className="command-phrase">"begin quiz"</span>
-                <span className="command-action">Begin quiz</span>
-              </div>
-              <div className="command-item">
-                <span className="command-phrase">"next question"</span>
-                <span className="command-action">Next question</span>
-              </div>
-            </div>
-            
-            <div className="command-section">
               <h5>⚙️ Controls</h5>
               <div className="command-item">
                 <span className="command-phrase">"hide commands"</span>
@@ -359,7 +207,11 @@ function App() {
               <h5>🔤 Letters</h5>
               <div className="command-item">
                 <span className="command-phrase">"A", "B", "C"...</span>
-                <span className="command-action">Show letter or answer</span>
+                <span className="command-action">Show ASL letter</span>
+              </div>
+              <div className="command-item">
+                <span className="command-phrase">"ay", "bee", "see"...</span>
+                <span className="command-action">Alternative pronunciations</span>
               </div>
             </div>
           </div>
@@ -368,8 +220,7 @@ function App() {
 
       {/* Main Content */}
       <div className="container">
-        {currentPage === 'learning' ? (
-          <div className="learning-mode">
+        <div className="learning-mode">
             <h1>🤟 ASL Learning</h1>
             <p className="subtitle">Learn American Sign Language with your voice!</p>
             
@@ -413,102 +264,16 @@ function App() {
 
             <div className="instructions">
               <h3>🎤 Voice Commands:</h3>
-              <p>Say any letter to see its ASL sign, or say "quiz" to start quizzing!</p>
+              <p>Say any letter to see its ASL sign!</p>
               <p><strong>💡 Tips:</strong></p>
               <ul>
                 <li>Make sure microphone is allowed</li>
                 <li>Speak clearly and loudly</li>
                 <li>Use Chrome or Edge for best results</li>
-                <li>Say "quiz" to start the quiz mode</li>
+                <li>Say "hide commands" to hide the commands panel</li>
               </ul>
             </div>
           </div>
-        ) : (
-          <div className="quiz-mode">
-            <h1>🎯 ASL Quiz</h1>
-            <p className="subtitle">Test your ASL knowledge!</p>
-            
-            {quizActive ? (
-              <div className="quiz-content">
-                <div className="quiz-stats">
-                  <div className="stat">
-                    <span className="stat-label">Score:</span>
-                    <span className="stat-value">{quizScore}/{quizTotal}</span>
-                  </div>
-                  <div className="stat">
-                    <span className="stat-label">Accuracy:</span>
-                    <span className="stat-value">
-                      {quizTotal > 0 ? Math.round((quizScore / quizTotal) * 100) : 0}%
-                    </span>
-                  </div>
-                </div>
-
-                <div className="quiz-question">
-                  <h3>What letter is this?</h3>
-                  <p>Debug: Current quiz letter is "{currentQuizLetter || 'none'}"</p>
-                  <p>Debug: Quiz active: {quizActive ? 'true' : 'false'}</p>
-                  <p>Debug: Image URL is "{currentQuizLetter ? getImageUrl(currentQuizLetter) : 'no letter'}"</p>
-                  {currentQuizLetter ? (
-                    <img 
-                      src={getImageUrl(currentQuizLetter)} 
-                      alt={`ASL sign for ${currentQuizLetter}`}
-                      className="asl-image"
-                      onLoad={() => console.log('Quiz image loaded successfully')}
-                      onError={(e) => {
-                        console.log('Quiz image failed to load:', e.target.src);
-                        e.target.style.display = 'none';
-                        showStatus(`Image not found for letter ${currentQuizLetter.toUpperCase()}`);
-                      }}
-                    />
-                  ) : (
-                    <div className="no-image">
-                      <p>No quiz letter selected yet. Say "start quiz" to begin!</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="quiz-instructions">
-                  <p>Say the letter you see in the ASL sign!</p>
-                </div>
-              </div>
-            ) : (
-              <div className="quiz-start">
-                <h3>Ready to test your ASL knowledge?</h3>
-                <p>Say "start quiz" to begin!</p>
-                <div className="quiz-info">
-                  <p>• You'll see ASL signs and need to say the letter</p>
-                  <p>• Your score will be tracked</p>
-                  <p>• Say "learning" to go back to learning mode</p>
-                </div>
-              </div>
-            )}
-
-            <div className="voice-button-container">
-              <button 
-                className={`voice-button ${isListening ? 'listening' : ''}`}
-                onClick={() => {
-                  if (isListening) {
-                    try {
-                      recognitionRef.current.stop();
-                      setIsListening(false);
-                    } catch (error) {
-                      console.log('Error stopping voice recognition:', error);
-                    }
-                  } else {
-                    try {
-                      recognitionRef.current.start();
-                      setIsListening(true);
-                    } catch (error) {
-                      console.log('Error starting voice recognition:', error);
-                    }
-                  }
-                }}
-              >
-                {isListening ? '🔇 Stop Voice' : '🎤 Start Voice'}
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
