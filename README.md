@@ -5,32 +5,24 @@ A React-based American Sign Language learning application with voice recognition
 ## Features
 
 - **🎤 Voice Recognition**: Control the app entirely with your voice
-- **📚 Learning Mode**: Learn ASL letters with visual examples
-- **🎯 Quiz Mode**: Test your ASL knowledge
+- **📚 Letter Learning**: Learn ASL letters with visual examples
 - **📱 Responsive Design**: Works on desktop, tablet, and mobile
 - **🔄 Real-time Updates**: Smooth React state management
+- **🎨 Modern UI**: Clean interface with floating commands panel
 
 ## Voice Commands
 
-### Learning Mode
-- Say **"next"** → Next letter
-- Say **"previous"** → Previous letter  
-- Say **"random"** → Random letter
-- Say **"repeat"** → Show current letter again
-- Say **"quiz"** → Go to quiz mode
-- Say **"A"**, **"B"**, **"C"**, etc. → Jump to letter
+### Letter Navigation
+- Say **"A"**, **"B"**, **"C"**, etc. → Jump to specific letter
+- Say **"ay"**, **"bee"**, **"see"**, etc. → Alternative pronunciations
 
-### Quiz Mode
-- Say **"start quiz"** → Begin quiz
-- Say **"next"** → Next question
-- Say **"learning"** → Back to learning mode
-- Say any letter → Answer the quiz
+### App Controls
+- Say **"hide commands"** → Hide voice commands panel
+- Say **"show commands"** → Show voice commands panel
 
-### General Commands
-- Say **"hide commands"** → Hide voice panel
-- Say **"show commands"** → Show voice panel
-- Say **"stop voice"** → Deactivate voice
-- Say **"start voice"** → Activate voice
+### Voice Recognition
+- Voice recognition starts automatically when the app loads
+- Click the voice button to manually start/stop voice recognition
 
 ## Getting Started
 
@@ -65,9 +57,9 @@ npm start
 
 1. **Allow Microphone Access**: The app will request microphone permission for voice recognition
 2. **Voice Recognition**: The app auto-starts voice recognition after loading
-3. **Learning**: Say letters or navigation commands to learn ASL signs
-4. **Quiz**: Say "quiz" to test your knowledge
-5. **Voice Panel**: Use the floating voice commands panel for reference
+3. **Learning**: Say letters to see their ASL signs
+4. **Commands Panel**: Use the floating voice commands panel for reference
+5. **Voice Control**: Click the voice button to manually control voice recognition
 
 ## Browser Compatibility
 
@@ -107,13 +99,24 @@ asl_learning_app/
 - `npm test`: Run tests
 - `npm run eject`: Eject from Create React App
 
-### Building for Production
+## Deployment
 
-```bash
-npm run build
-```
+### Netlify Deployment
 
-This creates a `build` folder with optimized production files.
+1. **Build Settings:**
+   - Build command: `npm run build`
+   - Publish directory: `build`
+   - Node version: `18` (or `16`)
+
+2. **Deploy Steps:**
+   - Connect your GitHub repository to Netlify
+   - Set the build settings above
+   - Deploy automatically on git push
+
+3. **Important Notes:**
+   - Voice recognition requires HTTPS (Netlify provides this)
+   - Users must allow microphone access
+   - Chrome/Edge browsers work best
 
 ## Contributing
 
