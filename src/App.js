@@ -5,7 +5,6 @@ function App() {
   const [currentLetter, setCurrentLetter] = useState('a');
   const [letters] = useState(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']);
   const [isListening, setIsListening] = useState(false);
-  const [status, setStatus] = useState('');
   const [commandsVisible, setCommandsVisible] = useState(true);
 
   const recognitionRef = useRef(null);
@@ -26,10 +25,6 @@ function App() {
     }, 1000);
   }, []);
 
-  const showStatus = (message) => {
-    setStatus(message);
-    setTimeout(() => setStatus(''), 3000);
-  };
 
   const setupVoiceRecognition = () => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -51,7 +46,6 @@ function App() {
               const command = result[0].transcript.toLowerCase().trim();
               console.log('Voice recognition result:', result[0].transcript);
               console.log('Confidence:', result[0].confidence);
-              showStatus(`Heard: "${command}"`);
               processVoiceCommand(command);
             }
           };
@@ -98,14 +92,12 @@ function App() {
     if (cleanCommand.includes('hide commands')) {
       console.log('Hide commands detected');
       setCommandsVisible(false);
-      showStatus('Commands hidden. Say "show commands" to bring them back.');
       return;
     }
     
     if (cleanCommand.includes('show commands')) {
       console.log('Show commands detected');
       setCommandsVisible(true);
-      showStatus('Commands shown!');
       return;
     }
     
@@ -147,10 +139,8 @@ function App() {
     if (detectedLetter && letters.includes(detectedLetter)) {
       console.log('Letter detected:', detectedLetter);
       setCurrentLetter(detectedLetter);
-      showStatus(`Showing letter ${detectedLetter.toUpperCase()}`);
     } else {
       console.log('No letter detected or letter not in letters array');
-      showStatus(`Command not recognized: "${command}"`);
     }
   };
 
@@ -171,12 +161,6 @@ function App() {
         </div>
       </nav>
 
-      {/* Status Message */}
-      {status && (
-        <div className="status">
-          {status}
-        </div>
-      )}
 
       {/* Voice Commands Panel */}
       {commandsVisible && (
@@ -232,7 +216,6 @@ function App() {
                 className="asl-image"
                 onError={(e) => {
                   e.target.style.display = 'none';
-                  showStatus(`Image not found for letter ${currentLetter.toUpperCase()}`);
                 }}
               />
             </div>
