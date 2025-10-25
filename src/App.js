@@ -187,13 +187,19 @@ function App() {
     }
     
     if (detectedLetter && letters.includes(detectedLetter)) {
+      console.log('Letter detected:', detectedLetter);
+      console.log('Current page:', currentPage);
+      console.log('Quiz active:', quizActive);
+      
       if (currentPage === 'learning') {
         setCurrentLetter(detectedLetter);
         showStatus(`Showing letter ${detectedLetter.toUpperCase()}`);
       } else if (currentPage === 'quiz' && quizActive) {
+        console.log('Checking quiz answer:', detectedLetter, 'against:', currentQuizLetter);
         checkQuizAnswer(detectedLetter);
       }
     } else {
+      console.log('No letter detected or letter not in letters array');
       showStatus(`Command not recognized: "${command}"`);
     }
   };
@@ -230,9 +236,18 @@ function App() {
   };
 
   const checkQuizAnswer = (answer) => {
-    if (!quizActive || !currentQuizLetter) return;
+    console.log('checkQuizAnswer called with:', answer);
+    console.log('quizActive:', quizActive);
+    console.log('currentQuizLetter:', currentQuizLetter);
+    
+    if (!quizActive || !currentQuizLetter) {
+      console.log('Quiz not active or no current letter, returning');
+      return;
+    }
     
     const isCorrect = answer.toLowerCase() === currentQuizLetter.toLowerCase();
+    console.log('Answer comparison:', answer.toLowerCase(), '===', currentQuizLetter.toLowerCase(), '=', isCorrect);
+    
     if (isCorrect) {
       setQuizScore(prev => prev + 1);
       showStatus(`✅ Correct! It was ${currentQuizLetter.toUpperCase()}`);
