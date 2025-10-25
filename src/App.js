@@ -204,12 +204,17 @@ function App() {
     setQuizScore(0);
     setQuizTotal(0);
     console.log('Quiz active set to true');
-    nextQuizQuestion();
+    
+    // Use setTimeout to ensure state is updated before calling nextQuizQuestion
+    setTimeout(() => {
+      nextQuizQuestion();
+    }, 100);
+    
     showStatus('Quiz started! Look at the ASL sign and say the letter!');
   };
 
   const nextQuizQuestion = () => {
-    if (!quizActive) return;
+    console.log('nextQuizQuestion called');
     
     const randomIndex = Math.floor(Math.random() * letters.length);
     const randomLetter = letters[randomIndex];
@@ -423,11 +428,12 @@ function App() {
                   </div>
                 </div>
 
-                {currentQuizLetter && (
-                  <div className="quiz-question">
-                    <h3>What letter is this?</h3>
-                    <p>Debug: Current quiz letter is "{currentQuizLetter}"</p>
-                    <p>Debug: Image URL is "{getImageUrl(currentQuizLetter)}"</p>
+                <div className="quiz-question">
+                  <h3>What letter is this?</h3>
+                  <p>Debug: Current quiz letter is "{currentQuizLetter || 'none'}"</p>
+                  <p>Debug: Quiz active: {quizActive ? 'true' : 'false'}</p>
+                  <p>Debug: Image URL is "{currentQuizLetter ? getImageUrl(currentQuizLetter) : 'no letter'}"</p>
+                  {currentQuizLetter ? (
                     <img 
                       src={getImageUrl(currentQuizLetter)} 
                       alt={`ASL sign for ${currentQuizLetter}`}
@@ -439,8 +445,12 @@ function App() {
                         showStatus(`Image not found for letter ${currentQuizLetter.toUpperCase()}`);
                       }}
                     />
-                  </div>
-                )}
+                  ) : (
+                    <div className="no-image">
+                      <p>No quiz letter selected yet. Say "start quiz" to begin!</p>
+                    </div>
+                  )}
+                </div>
 
                 <div className="quiz-instructions">
                   <p>Say the letter you see in the ASL sign!</p>
