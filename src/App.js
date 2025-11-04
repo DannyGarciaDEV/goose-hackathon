@@ -213,7 +213,7 @@ function App() {
     }
   }, [handTrackingActive, handDetected, datasetEmbeddings, currentLetter]);
 
-  // Start voice recognition
+  // Start voice recognition - Fixed for Netlify/HTTPS
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -222,25 +222,78 @@ function App() {
       recognitionRef.current.interimResults = false;
       recognitionRef.current.lang = 'en-US';
 
-      recognitionRef.current.onstart = () => setIsListening(true);
-      recognitionRef.current.onresult = (event) => {
-        const command = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
-        console.log('🎤 Voice recognized:', command);
-        processVoiceCommand(command);
+      recognitionRef.current.onstart = () => {
+        console.log('✅ Speech recognition started');
+        setIsListening(true);
       };
-      recognitionRef.current.onerror = () => setIsListening(false);
-      recognitionRef.current.onend = () => {
-        if (isListening) {
-          setTimeout(() => recognitionRef.current?.start(), 500);
+
+      recognitionRef.current.onresult = (event) => {
+        if (event.results && event.results.length > 0) {
+          const command = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
+          console.log('🎤 Voice recognized:', command);
+          processVoiceCommand(command);
         }
       };
 
-      setTimeout(() => {
-        try {
-          recognitionRef.current.start();
-          setIsListening(true);
-        } catch (e) {}
-      }, 1000);
+      recognitionRef.current.onerror = (event) => {
+        console.log('⚠️ Speech recognition error:', event.error);
+        setIsListening(false);
+        // Restart recognition on error (except for no-speech which is normal)
+        if (event.error !== 'no-speech' && event.error !== 'aborted') {
+          setTimeout(() => {
+            try {
+              if (recognitionRef.current && !isListening) {
+                recognitionRef.current.start();
+              }
+            } catch (e) {
+              console.log('Error restarting recognition:', e);
+            }
+          }, 1000);
+        }
+      };
+
+      recognitionRef.current.onend = () => {
+        console.log('🔄 Speech recognition ended, restarting...');
+        setIsListening(false);
+        // Always try to restart (for continuous listening)
+        setTimeout(() => {
+          try {
+            if (recognitionRef.current) {
+              recognitionRef.current.start();
+            }
+          } catch (e) {
+            console.log('Error restarting recognition:', e);
+          }
+        }, 500);
+      };
+
+      // Start recognition after a delay
+      const startRecognition = () => {
+        setTimeout(() => {
+          try {
+            if (recognitionRef.current) {
+              recognitionRef.current.start();
+              console.log('🎤 Starting speech recognition...');
+            }
+          } catch (e) {
+            console.log('Error starting recognition:', e);
+            // Retry once
+            setTimeout(() => {
+              try {
+                if (recognitionRef.current) {
+                  recognitionRef.current.start();
+                }
+              } catch (e2) {
+                console.log('Error on retry:', e2);
+              }
+            }, 2000);
+          }
+        }, 1000);
+      };
+
+      startRecognition();
+    } else {
+      console.warn('⚠️ Speech recognition not supported in this browser');
     }
   }, []);
 
@@ -435,6 +488,28 @@ function App() {
   const processVoiceCommand = (command) => {
     console.log('🔊 Processing voice command:', command);
     
+    // Scroll commands (no keys needed) - Gentle scrolling
+    if (command.includes('scroll down') || command.includes('scroll down page') || command.includes('page down')) {
+      window.scrollBy({ top: 200, behavior: 'smooth' });
+      console.log('📜 Scrolling down gently');
+      return;
+    }
+    if (command.includes('scroll up') || command.includes('scroll up page') || command.includes('page up')) {
+      window.scrollBy({ top: -200, behavior: 'smooth' });
+      console.log('📜 Scrolling up gently');
+      return;
+    }
+    if (command.includes('scroll to top') || command.includes('go to top') || command.includes('top of page')) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      console.log('📜 Scrolling to top');
+      return;
+    }
+    if (command.includes('scroll to bottom') || command.includes('go to bottom') || command.includes('bottom of page')) {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      console.log('📜 Scrolling to bottom');
+      return;
+    }
+    
     if (command.includes('hide commands')) {
       setCommandsVisible(false);
       return;
@@ -515,10 +590,14 @@ function App() {
     return `/asl_dataset/${letter}/hand1_${letter}_bot_seg_1_cropped.jpeg`;
   };
 
+
   useEffect(() => {
     return () => {
       stopWebcam();
       recognitionRef.current?.stop();
+      if (classificationIntervalRef.current) {
+        clearInterval(classificationIntervalRef.current);
+      }
     };
   }, []);
 
@@ -556,6 +635,25 @@ function App() {
               <div className="command-item">
                 <span className="command-phrase">"start camera"</span>
                 <span className="command-action">Start webcam</span>
+              </div>
+            </div>
+            <div className="command-section">
+              <h5>📜 Navigation</h5>
+              <div className="command-item">
+                <span className="command-phrase">"scroll down"</span>
+                <span className="command-action">Scroll down</span>
+              </div>
+              <div className="command-item">
+                <span className="command-phrase">"scroll up"</span>
+                <span className="command-action">Scroll up</span>
+              </div>
+              <div className="command-item">
+                <span className="command-phrase">"scroll to top"</span>
+                <span className="command-action">Jump to top</span>
+              </div>
+              <div className="command-item">
+                <span className="command-phrase">"scroll to bottom"</span>
+                <span className="command-action">Jump to bottom</span>
               </div>
             </div>
             <div className="command-section">
@@ -677,11 +775,19 @@ function App() {
           <div className="instructions">
             <h3>🎤 Voice Commands:</h3>
             <p>Say any letter to see its ASL sign!</p>
+            <p><strong>📜 Scroll Commands:</strong></p>
+            <ul>
+              <li><strong>"scroll down"</strong> or <strong>"page down"</strong>: Scroll down</li>
+              <li><strong>"scroll up"</strong> or <strong>"page up"</strong>: Scroll up</li>
+              <li><strong>"scroll to top"</strong> or <strong>"go to top"</strong>: Jump to top</li>
+              <li><strong>"scroll to bottom"</strong> or <strong>"go to bottom"</strong>: Jump to bottom</li>
+            </ul>
             <p><strong>💡 Tips:</strong></p>
             <ul>
               <li>Allow microphone and webcam permissions</li>
               <li>Use Chrome or Edge for best results</li>
               <li>Start camera to see hand detection</li>
+              <li>No mouse or keyboard needed - everything is voice controlled!</li>
             </ul>
           </div>
         </div>
