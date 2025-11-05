@@ -441,15 +441,16 @@ function LearningMode() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Draw landmarks if detected (matching CodePen exactly)
-      if (results && results.landmarks) {
+      if (results && results.landmarks && results.landmarks.length > 0) {
         setHandDetected(results.landmarks.length > 0);
 
         // Use MediaPipe drawing utilities (matching CodePen exactly)
         try {
           const { drawConnectors, drawLandmarks, HAND_CONNECTIONS } = await import('@mediapipe/drawing_utils');
           
-          // Draw for each hand (matching CodePen EXACTLY)
+          // Draw for each hand (matching MediaPipe example)
           for (const landmarks of results.landmarks) {
+            // Draw MediaPipe hand landmarks and connectors (matching example exactly)
             drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {
               color: "#00FF00",
               lineWidth: 5
@@ -498,6 +499,10 @@ function LearningMode() {
         }
       } else {
         setHandDetected(false);
+        
+        // Reset smoothed box when hand is lost
+        
+        // Don't draw any box when no hand is detected
       }
 
       ctx.restore();

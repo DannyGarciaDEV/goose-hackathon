@@ -1072,7 +1072,7 @@ h1 {
   margin-bottom: 1.5rem;
 }
 
-/* Webcam Container */
+/* Webcam Container - Matching MediaPipe example */
 .webcam-container {
   position: relative;
   width: 100%;
@@ -1083,6 +1083,7 @@ h1 {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
+/* Video element - matching MediaPipe example exactly */
 .webcam-video {
   width: 100% !important;
   height: auto !important;
@@ -1097,21 +1098,21 @@ h1 {
   transform: rotateY(180deg);
   -webkit-transform: rotateY(180deg);
   -moz-transform: rotateY(180deg);
-  z-index: 1;
   position: relative;
+  z-index: 1;
 }
 
-.webcam-canvas {
+/* Canvas overlay - matching MediaPipe example exactly */
+.webcam-canvas,
+.output_canvas {
   position: absolute;
-  top: 0;
-  left: 0;
+  left: 0px;
+  top: 0px;
   pointer-events: none;
-  border-radius: 10px;
   transform: rotateY(180deg);
   -webkit-transform: rotateY(180deg);
   -moz-transform: rotateY(180deg);
   z-index: 2;
-  mix-blend-mode: normal;
 }
 
 
