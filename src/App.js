@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 
-function App() {
+function LearningMode() {
   const [currentLetter, setCurrentLetter] = useState('a');
   const [letters] = useState(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']);
   const [isListening, setIsListening] = useState(false);
@@ -109,6 +109,7 @@ function App() {
     }
   };
 
+
   // Classify user's gesture by comparing with dataset
   const classifyGesture = async () => {
     if (!imageEmbedderRef.current || !videoRef.current || !handDetected) {
@@ -213,11 +214,29 @@ function App() {
     }
   }, [handTrackingActive, handDetected, datasetEmbeddings, currentLetter]);
 
-  // Start voice recognition - Fixed for Netlify/HTTPS
+  // Start voice recognition - Shared instance across routes
   useEffect(() => {
+    // Use shared instance if it exists
+    if (window.sharedSpeechRecognition) {
+      console.log('✅ Using existing shared speech recognition');
+      recognitionRef.current = window.sharedSpeechRecognition;
+      setIsListening(true);
+      return;
+    }
+
+    // Only initialize if it doesn't exist
+    if (recognitionRef.current) {
+      console.log('Voice recognition already initialized');
+      return;
+    }
+
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
+      
+      // Share instance globally so it persists across routes
+      window.sharedSpeechRecognition = recognitionRef.current;
+      
       recognitionRef.current.continuous = true;
       recognitionRef.current.interimResults = false;
       recognitionRef.current.lang = 'en-US';
@@ -238,8 +257,8 @@ function App() {
       recognitionRef.current.onerror = (event) => {
         console.log('⚠️ Speech recognition error:', event.error);
         setIsListening(false);
-        // Restart recognition on error (except for no-speech which is normal)
-        if (event.error !== 'no-speech' && event.error !== 'aborted') {
+        // Don't auto-restart on certain errors
+        if (event.error !== 'no-speech' && event.error !== 'aborted' && event.error !== 'not-allowed') {
           setTimeout(() => {
             try {
               if (recognitionRef.current && !isListening) {
@@ -295,6 +314,11 @@ function App() {
     } else {
       console.warn('⚠️ Speech recognition not supported in this browser');
     }
+
+    // Don't cleanup on navigation - keep recognition running
+    return () => {
+      console.log('LearningMode unmounting, but keeping voice recognition running');
+    };
   }, []);
 
   // Start webcam
@@ -531,7 +555,7 @@ function App() {
       stopWebcam();
       return;
     }
-
+    
     // Letter detection - improved pattern matching
     let letter = null;
     
@@ -604,15 +628,17 @@ function App() {
   return (
     <div className="app">
       <nav className="navbar">
-        <div className="navbar-brand">🤟 ASL Learning</div>
+        <div className="navbar-brand" style={{ cursor: 'default' }}>
+          ASL Learning
+        </div>
         <div className="navbar-controls">
           <div className="voice-status">
-            <span className="voice-icon">{isListening ? '🎤' : '🔇'}</span>
+            <span className="voice-icon">{isListening ? '●' : '○'}</span>
             <span>{isListening ? 'Voice Active' : 'Voice Inactive'}</span>
           </div>
           {handTrackingActive && (
             <div className="hand-status">
-              <span>🖐️</span>
+              <span>HAND</span>
               <span>{handDetected ? 'Hand Detected' : 'No Hand'}</span>
             </div>
           )}
@@ -622,12 +648,12 @@ function App() {
       {commandsVisible && (
         <div className="voice-commands-panel">
           <div className="commands-header">
-            <h4>🎤 Voice Commands</h4>
+            <h4>Voice Commands</h4>
             <button onClick={() => setCommandsVisible(false)}>✕</button>
           </div>
           <div className="commands-content">
             <div className="command-section">
-              <h5>⚙️ Controls</h5>
+              <h5>Controls</h5>
               <div className="command-item">
                 <span className="command-phrase">"hide commands"</span>
                 <span className="command-action">Hide panel</span>
@@ -638,7 +664,7 @@ function App() {
               </div>
             </div>
             <div className="command-section">
-              <h5>📜 Navigation</h5>
+              <h5>Scroll</h5>
               <div className="command-item">
                 <span className="command-phrase">"scroll down"</span>
                 <span className="command-action">Scroll down</span>
@@ -657,7 +683,7 @@ function App() {
               </div>
             </div>
             <div className="command-section">
-              <h5>🔤 Letters</h5>
+              <h5>Letters</h5>
               <div className="command-item">
                 <span className="command-phrase">"A", "B", "C"...</span>
                 <span className="command-action">Show ASL letter</span>
@@ -669,7 +695,7 @@ function App() {
 
       <div className="container">
         <div className="learning-mode">
-          <h1>🤟 ASL Learning</h1>
+          <h1>ASL Learning</h1>
           <p className="subtitle">Learn American Sign Language!</p>
           
           <div className="button-group">
@@ -685,7 +711,7 @@ function App() {
                 }
               }}
             >
-              {isListening ? '🔇 Stop Voice' : '🎤 Start Voice'}
+              {isListening ? 'Stop Voice' : 'Start Voice'}
             </button>
 
             <button 
@@ -693,7 +719,7 @@ function App() {
               onClick={handTrackingActive ? stopWebcam : startWebcam}
               disabled={!mediapipeReady}
             >
-              {handTrackingActive ? '📷 Stop Camera' : '📷 Start Camera'}
+              {handTrackingActive ? 'Stop Camera' : 'Start Camera'}
             </button>
           </div>
 
@@ -728,12 +754,12 @@ function App() {
                   <div className="classification-feedback">
                     {isClassifying ? (
                       <div className="info-message-small">
-                        🔍 Analyzing your gesture...
+                        Analyzing your gesture...
                       </div>
                     ) : similarityScore !== null ? (
                       <div className={`similarity-score ${similarityScore > 0.27 ? 'high' : similarityScore > 0.2 ? 'medium' : 'low'}`}>
                         <div className="similarity-label">
-                          {similarityScore > 0.27 ? '✅ Good enough! Approved!' : similarityScore > 0.2 ? '⚠️ Getting close' : '❌ Try again'}
+                          {similarityScore > 0.27 ? 'Good enough! Approved!' : similarityScore > 0.2 ? 'Getting close' : 'Try again'}
                         </div>
                         <div className="similarity-bar">
                           <div 
@@ -744,13 +770,13 @@ function App() {
                       </div>
                     ) : (
                       <div className="success-message-small">
-                        ✅ Hand detected! Hold your gesture steady...
+                        Hand detected! Hold your gesture steady...
                       </div>
                     )}
                   </div>
                 ) : (
                   <div className="info-message-small">
-                    👋 Show your hand to the camera
+                    Show your hand to the camera
                   </div>
                 )}
               </div>
@@ -768,21 +794,21 @@ function App() {
 
           {!mediapipeReady && (
             <div className="info-message">
-              <p>⏳ Loading hand tracking...</p>
+              <p>Loading hand tracking...</p>
             </div>
           )}
 
           <div className="instructions">
-            <h3>🎤 Voice Commands:</h3>
+            <h3>Voice Commands:</h3>
             <p>Say any letter to see its ASL sign!</p>
-            <p><strong>📜 Scroll Commands:</strong></p>
+            <p><strong>Scroll Commands:</strong></p>
             <ul>
               <li><strong>"scroll down"</strong> or <strong>"page down"</strong>: Scroll down</li>
               <li><strong>"scroll up"</strong> or <strong>"page up"</strong>: Scroll up</li>
               <li><strong>"scroll to top"</strong> or <strong>"go to top"</strong>: Jump to top</li>
               <li><strong>"scroll to bottom"</strong> or <strong>"go to bottom"</strong>: Jump to bottom</li>
             </ul>
-            <p><strong>💡 Tips:</strong></p>
+            <p><strong>Tips:</strong></p>
             <ul>
               <li>Allow microphone and webcam permissions</li>
               <li>Use Chrome or Edge for best results</li>
@@ -796,4 +822,4 @@ function App() {
   );
 }
 
-export default App;
+export default LearningMode;
