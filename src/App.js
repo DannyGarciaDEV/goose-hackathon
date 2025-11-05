@@ -629,16 +629,16 @@ function LearningMode() {
     <div className="app">
       <nav className="navbar">
         <div className="navbar-brand" style={{ cursor: 'default' }}>
-          ASL Learning
+          🤟 ASL Learning
         </div>
         <div className="navbar-controls">
           <div className="voice-status">
-            <span className="voice-icon">{isListening ? '●' : '○'}</span>
+            <span className="voice-icon">{isListening ? '🎤' : '🔇'}</span>
             <span>{isListening ? 'Voice Active' : 'Voice Inactive'}</span>
           </div>
           {handTrackingActive && (
             <div className="hand-status">
-              <span>HAND</span>
+              <span>🖐️</span>
               <span>{handDetected ? 'Hand Detected' : 'No Hand'}</span>
             </div>
           )}
@@ -648,12 +648,12 @@ function LearningMode() {
       {commandsVisible && (
         <div className="voice-commands-panel">
           <div className="commands-header">
-            <h4>Voice Commands</h4>
+            <h4>🎤 Voice Commands</h4>
             <button onClick={() => setCommandsVisible(false)}>✕</button>
           </div>
           <div className="commands-content">
             <div className="command-section">
-              <h5>Controls</h5>
+              <h5>⚙️ Controls</h5>
               <div className="command-item">
                 <span className="command-phrase">"hide commands"</span>
                 <span className="command-action">Hide panel</span>
@@ -664,7 +664,7 @@ function LearningMode() {
               </div>
             </div>
             <div className="command-section">
-              <h5>Scroll</h5>
+              <h5>📜 Scroll</h5>
               <div className="command-item">
                 <span className="command-phrase">"scroll down"</span>
                 <span className="command-action">Scroll down</span>
@@ -683,7 +683,7 @@ function LearningMode() {
               </div>
             </div>
             <div className="command-section">
-              <h5>Letters</h5>
+              <h5>🔤 Letters</h5>
               <div className="command-item">
                 <span className="command-phrase">"A", "B", "C"...</span>
                 <span className="command-action">Show ASL letter</span>
@@ -695,32 +695,18 @@ function LearningMode() {
 
       <div className="container">
         <div className="learning-mode">
-          <h1>ASL Learning</h1>
+          <h1>🤟 ASL Learning</h1>
           <p className="subtitle">Learn American Sign Language!</p>
           
-          <div className="button-group">
-            <button 
-              className={`voice-button ${isListening ? 'listening' : ''}`}
-              onClick={() => {
-                if (isListening) {
-                  recognitionRef.current?.stop();
-                  setIsListening(false);
-                } else {
-                  recognitionRef.current?.start();
-                  setIsListening(true);
-                }
-              }}
-            >
-              {isListening ? 'Stop Voice' : 'Start Voice'}
-            </button>
-
-            <button 
-              className={`camera-button ${handTrackingActive ? 'active' : ''}`}
-              onClick={handTrackingActive ? stopWebcam : startWebcam}
-              disabled={!mediapipeReady}
-            >
-              {handTrackingActive ? 'Stop Camera' : 'Start Camera'}
-            </button>
+          <div className="status-indicators">
+            <div className={`status-indicator ${isListening ? 'active' : 'inactive'}`}>
+              <span className="status-icon">{isListening ? '🎤' : '🔇'}</span>
+              <span className="status-text">{isListening ? 'Voice Active' : 'Voice Inactive'}</span>
+            </div>
+            <div className={`status-indicator ${handTrackingActive ? 'active' : 'inactive'} ${!mediapipeReady ? 'disabled' : ''}`}>
+              <span className="status-icon">{handTrackingActive ? '📷' : '📷'}</span>
+              <span className="status-text">{handTrackingActive ? 'Camera Active' : 'Camera Inactive'}</span>
+            </div>
           </div>
 
           {handTrackingActive ? (
@@ -754,12 +740,12 @@ function LearningMode() {
                   <div className="classification-feedback">
                     {isClassifying ? (
                       <div className="info-message-small">
-                        Analyzing your gesture...
+                        🔍 Analyzing your gesture...
                       </div>
                     ) : similarityScore !== null ? (
                       <div className={`similarity-score ${similarityScore > 0.27 ? 'high' : similarityScore > 0.2 ? 'medium' : 'low'}`}>
                         <div className="similarity-label">
-                          {similarityScore > 0.27 ? 'Good enough! Approved!' : similarityScore > 0.2 ? 'Getting close' : 'Try again'}
+                          {similarityScore > 0.27 ? '✅ Good enough! Approved!' : similarityScore > 0.2 ? '⚠️ Getting close' : '❌ Try again'}
                         </div>
                         <div className="similarity-bar">
                           <div 
@@ -770,13 +756,13 @@ function LearningMode() {
                       </div>
                     ) : (
                       <div className="success-message-small">
-                        Hand detected! Hold your gesture steady...
+                        ✅ Hand detected! Hold your gesture steady...
                       </div>
                     )}
                   </div>
                 ) : (
                   <div className="info-message-small">
-                    Show your hand to the camera
+                    👋 Show your hand to the camera
                   </div>
                 )}
               </div>
@@ -794,21 +780,21 @@ function LearningMode() {
 
           {!mediapipeReady && (
             <div className="info-message">
-              <p>Loading hand tracking...</p>
+              <p>⏳ Loading hand tracking...</p>
             </div>
           )}
 
           <div className="instructions">
-            <h3>Voice Commands:</h3>
+            <h3>🎤 Voice Commands:</h3>
             <p>Say any letter to see its ASL sign!</p>
-            <p><strong>Scroll Commands:</strong></p>
+            <p><strong>📜 Scroll Commands:</strong></p>
             <ul>
               <li><strong>"scroll down"</strong> or <strong>"page down"</strong>: Scroll down</li>
               <li><strong>"scroll up"</strong> or <strong>"page up"</strong>: Scroll up</li>
               <li><strong>"scroll to top"</strong> or <strong>"go to top"</strong>: Jump to top</li>
               <li><strong>"scroll to bottom"</strong> or <strong>"go to bottom"</strong>: Jump to bottom</li>
             </ul>
-            <p><strong>Tips:</strong></p>
+            <p><strong>💡 Tips:</strong></p>
             <ul>
               <li>Allow microphone and webcam permissions</li>
               <li>Use Chrome or Edge for best results</li>
