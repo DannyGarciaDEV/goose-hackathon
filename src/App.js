@@ -890,30 +890,6 @@ function LearningMode() {
                               {handedness} ({(handednessScore * 100).toFixed(1)}%)
                             </span>
                           </div>
-                          {handDepth !== null && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                              <span style={{ fontWeight: 'bold' }}>📏 Depth (Z):</span>
-                              <span>{handDepth.toFixed(4)}</span>
-                              <span style={{ fontSize: '0.75rem', color: '#666' }}>
-                                {handDepth < -0.1 ? '(Close)' : handDepth > 0.1 ? '(Far)' : '(Medium)'}
-                              </span>
-                            </div>
-                          )}
-                          {worldLandmarks && worldLandmarks.length > 0 && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#666' }}>
-                              <span style={{ fontWeight: 'bold' }}>🌐 3D World:</span>
-                              <span>{worldLandmarks.length} landmarks detected</span>
-                            </div>
-                          )}
-                          {handPoseAnalysis && (
-                            <div style={{ marginTop: '0.5rem', padding: '0.5rem', background: 'rgba(0, 0, 0, 0.05)', borderRadius: '6px', fontSize: '0.75rem' }}>
-                              <div style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>📐 3D Pose Analysis:</div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                                <div>Hand Span: {(handPoseAnalysis.handSpan * 100).toFixed(2)} cm</div>
-                                <div>Avg Extension: {(handPoseAnalysis.avgFingerExtension * 100).toFixed(2)} cm</div>
-                              </div>
-                            </div>
-                          )}
                         </div>
                       </div>
                     )}
