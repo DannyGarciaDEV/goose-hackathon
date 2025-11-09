@@ -12,10 +12,16 @@ function LearningMode() {
   const [similarityScore, setSimilarityScore] = useState(null);
   const [isClassifying, setIsClassifying] = useState(false);
   const [datasetEmbeddings, setDatasetEmbeddings] = useState({});
+  const [handedness, setHandedness] = useState(null); // Left or Right hand
+  const [handednessScore, setHandednessScore] = useState(null); // Confidence score
+  const [handDepth, setHandDepth] = useState(null); // Average z coordinate
+  const [worldLandmarks, setWorldLandmarks] = useState(null); // 3D world coordinates
+  const [handPoseAnalysis, setHandPoseAnalysis] = useState(null); // 3D pose analysis
 
   const recognitionRef = useRef(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const cornerCanvasRef = useRef(null); // Corner preview canvas for hand landmarks
   const handLandmarkerRef = useRef(null);
   const imageEmbedderRef = useRef(null);
   const lastVideoTimeRef = useRef(-1);
@@ -23,6 +29,7 @@ function LearningMode() {
   const classificationIntervalRef = useRef(null);
   const webcamRunningRef = useRef(false);
   const hasMovedToNextRef = useRef(false);
+  const drawingUtilsRef = useRef(null); // Cache drawing utilities
 
   // Initialize MediaPipe - Hand Landmarker + Image Embedder (using official example pattern)
   useEffect(() => {
@@ -56,6 +63,16 @@ function LearningMode() {
         
         handLandmarkerRef.current = handLandmarker;
         imageEmbedderRef.current = imageEmbedder;
+        
+        // Pre-load drawing utilities
+        try {
+          const drawingUtils = await import('@mediapipe/drawing_utils');
+          drawingUtilsRef.current = drawingUtils;
+          console.log('✅ Drawing utilities loaded');
+        } catch (error) {
+          console.error('Failed to load drawing utilities:', error);
+        }
+        
         setMediapipeReady(true);
         console.log('✅ MediaPipe ready (Hand Landmarker + Image Embedder)');
         
@@ -192,6 +209,53 @@ function LearningMode() {
     } finally {
       setIsClassifying(false);
     }
+  };
+
+  // Analyze 3D hand pose using world landmarks
+  const analyze3DHandPose = (worldLandmarks) => {
+    if (!worldLandmarks || worldLandmarks.length < 21) {
+      return null;
+    }
+
+    // Calculate 3D distance between two landmarks
+    const distance3D = (p1, p2) => {
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const dz = p2.z - p1.z;
+      return Math.sqrt(dx * dx + dy * dy + dz * dz);
+    };
+
+    // Key landmark indices (MediaPipe hand landmarks)
+    // 0: Wrist, 4: Thumb tip, 8: Index tip, 12: Middle tip, 16: Ring tip, 20: Pinky tip
+    const wrist = worldLandmarks[0];
+    const thumbTip = worldLandmarks[4];
+    const indexTip = worldLandmarks[8];
+    const middleTip = worldLandmarks[12];
+    const ringTip = worldLandmarks[16];
+    const pinkyTip = worldLandmarks[20];
+
+    const analysis = {
+      // Finger distances from wrist
+      thumbDistance: distance3D(wrist, thumbTip),
+      indexDistance: distance3D(wrist, indexTip),
+      middleDistance: distance3D(wrist, middleTip),
+      ringDistance: distance3D(wrist, ringTip),
+      pinkyDistance: distance3D(wrist, pinkyTip),
+      
+      // Hand span (distance between thumb and pinky)
+      handSpan: distance3D(thumbTip, pinkyTip),
+      
+      // Average finger extension
+      avgFingerExtension: (
+        distance3D(wrist, thumbTip) +
+        distance3D(wrist, indexTip) +
+        distance3D(wrist, middleTip) +
+        distance3D(wrist, ringTip) +
+        distance3D(wrist, pinkyTip)
+      ) / 5
+    };
+
+    return analysis;
   };
 
   // Start automatic classification when hand is detected
@@ -412,11 +476,25 @@ function LearningMode() {
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
+    
+    // Check if video dimensions are valid
+    if (!video.videoWidth || !video.videoHeight || video.videoWidth === 0 || video.videoHeight === 0) {
+      // Video not ready yet, try again next frame
+      if (webcamRunningRef.current) {
+        requestAnimationFrame(detectHands);
+      }
+      return;
+    }
+    
     const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      console.error('❌ Failed to get canvas context');
+      return;
+    }
 
-    // Set canvas dimensions (matching CodePen exactly)
-    canvas.style.width = video.videoWidth + 'px';
-    canvas.style.height = video.videoHeight + 'px';
+    // Set canvas dimensions (matching MediaPipe example exactly)
+    canvas.style.width = video.videoWidth;
+    canvas.style.height = video.videoHeight;
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
@@ -436,73 +514,109 @@ function LearningMode() {
       // Detect hands (matching CodePen exactly)
       const results = handLandmarkerRef.current.detectForVideo(video, startTimeMs);
 
-      // Clear and draw (matching CodePen exactly)
+      // Debug: Log detection results
+      if (results && results.landmarks && results.landmarks.length > 0) {
+        console.log(`🎯 Detected ${results.landmarks.length} hand(s), canvas size: ${canvas.width}x${canvas.height}, video size: ${video.videoWidth}x${video.videoHeight}`);
+      }
+
+      // Clear and prepare main canvas for drawing landmarks (matching MediaPipe example exactly)
       ctx.save();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw landmarks if detected (matching CodePen exactly)
-      if (results && results.landmarks && results.landmarks.length > 0) {
+      // Draw landmarks if detected (matching MediaPipe example exactly)
+      if (results.landmarks) {
         setHandDetected(results.landmarks.length > 0);
 
-        // Use MediaPipe drawing utilities (matching CodePen exactly)
-        try {
-          const { drawConnectors, drawLandmarks, HAND_CONNECTIONS } = await import('@mediapipe/drawing_utils');
-          
-          // Draw for each hand (matching MediaPipe example)
-          for (const landmarks of results.landmarks) {
-            // Draw MediaPipe hand landmarks and connectors (matching example exactly)
-            drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {
-              color: "#00FF00",
-              lineWidth: 5
-            });
-            drawLandmarks(ctx, landmarks, { 
-              color: "#FF0000", 
-              lineWidth: 2 
-            });
+        // Extract 3D prediction data from HandLandmarkerResult
+        // Handedness: Left or Right hand detection
+        // NOTE: Since video is mirrored, we need to flip the handedness interpretation
+        if (results.handednesses && results.handednesses.length > 0) {
+          const firstHandedness = results.handednesses[0];
+          if (firstHandedness && firstHandedness.length > 0) {
+            const category = firstHandedness[0];
+            // Flip handedness because video is mirrored - MediaPipe sees mirrored view
+            const actualHandedness = category.categoryName === "Left" ? "Right" : "Left";
+            setHandedness(actualHandedness);
+            setHandednessScore(category.score); // Confidence score (0-1)
+            console.log(`🤚 Handedness: ${actualHandedness} (${(category.score * 100).toFixed(1)}%) - MediaPipe detected: ${category.categoryName}`);
           }
-        } catch (drawError) {
-          console.warn('Drawing utils failed, using fallback:', drawError);
-          // Fallback drawing
-          for (const landmarks of results.landmarks) {
-            if (landmarks && landmarks.length >= 21) {
-              const connections = [
-                [0,1],[1,2],[2,3],[3,4],
-                [0,5],[5,6],[6,7],[7,8],
-                [0,9],[9,10],[10,11],[11,12],
-                [0,13],[13,14],[14,15],[15,16],
-                [0,17],[17,18],[18,19],[19,20],
-                [5,9],[9,13],[13,17]
-              ];
+        }
 
-              ctx.strokeStyle = '#00FF00';
-              ctx.lineWidth = 5;
-              connections.forEach(([start, end]) => {
-                if (start < landmarks.length && end < landmarks.length) {
-                  ctx.beginPath();
-                  ctx.moveTo(landmarks[start].x * canvas.width, landmarks[start].y * canvas.height);
-                  ctx.lineTo(landmarks[end].x * canvas.width, landmarks[end].y * canvas.height);
-                  ctx.stroke();
-                }
-              });
-
-              ctx.fillStyle = '#FF0000';
-              ctx.strokeStyle = '#FFFFFF';
-              ctx.lineWidth = 2;
-              landmarks.forEach(landmark => {
-                ctx.beginPath();
-                ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 5, 0, 2 * Math.PI);
-                ctx.fill();
-                ctx.stroke();
-              });
+        // Extract depth (z coordinates) from landmarks
+        if (results.landmarks && results.landmarks.length > 0) {
+          const firstHandLandmarks = results.landmarks[0];
+          if (firstHandLandmarks && firstHandLandmarks.length > 0) {
+            // Calculate average z coordinate for depth estimation
+            let sumZ = 0;
+            let validZCount = 0;
+            firstHandLandmarks.forEach(landmark => {
+              if (landmark && typeof landmark.z === 'number') {
+                sumZ += landmark.z;
+                validZCount++;
+              }
+            });
+            if (validZCount > 0) {
+              const avgZ = sumZ / validZCount;
+              setHandDepth(avgZ);
             }
+          }
+        }
+
+        // Extract world landmarks (3D coordinates in meters)
+        if (results.worldLandmarks && results.worldLandmarks.length > 0) {
+          const worldLm = results.worldLandmarks[0];
+          setWorldLandmarks(worldLm);
+          // Analyze 3D hand pose
+          const analysis = analyze3DHandPose(worldLm);
+          setHandPoseAnalysis(analysis);
+        }
+
+        // Use MediaPipe drawing utilities (matching MediaPipe example exactly)
+        if (drawingUtilsRef.current) {
+          const { drawConnectors, drawLandmarks, HAND_CONNECTIONS } = drawingUtilsRef.current;
+          
+          // Verify all utilities are available
+          if (!drawConnectors || !drawLandmarks || !HAND_CONNECTIONS) {
+            console.error('❌ Drawing utilities incomplete:', {
+              drawConnectors: !!drawConnectors,
+              drawLandmarks: !!drawLandmarks,
+              HAND_CONNECTIONS: !!HAND_CONNECTIONS
+            });
+          } else {
+            // Draw for each hand (matching MediaPipe example exactly)
+            for (const landmarks of results.landmarks) {
+              if (landmarks && landmarks.length > 0) {
+                try {
+                  drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {
+                    color: "#00FF00",
+                    lineWidth: 5
+                  });
+                  drawLandmarks(ctx, landmarks, { color: "#FF0000", lineWidth: 2 });
+                } catch (drawError) {
+                  console.error('❌ Error drawing landmarks:', drawError);
+                }
+              }
+            }
+          }
+        } else {
+          console.warn('⚠️ Drawing utilities not loaded yet - trying to load...');
+          // Try to load drawing utilities if not loaded
+          try {
+            const drawingUtils = await import('@mediapipe/drawing_utils');
+            drawingUtilsRef.current = drawingUtils;
+            console.log('✅ Drawing utilities loaded on demand');
+          } catch (loadError) {
+            console.error('❌ Failed to load drawing utilities:', loadError);
           }
         }
       } else {
         setHandDetected(false);
-        
-        // Reset smoothed box when hand is lost
-        
-        // Don't draw any box when no hand is detected
+        // Reset 3D prediction data when hand is lost
+        setHandedness(null);
+        setHandednessScore(null);
+        setHandDepth(null);
+        setWorldLandmarks(null);
+        setHandPoseAnalysis(null);
       }
 
       ctx.restore();
@@ -741,6 +855,7 @@ function LearningMode() {
                     className="webcam-canvas output_canvas"
                   />
                 </div>
+                {/* Hand landmarks are now drawn directly on the webcam canvas */}
                 {handDetected ? (
                   <div className="classification-feedback">
                     {isClassifying ? (
@@ -762,6 +877,44 @@ function LearningMode() {
                     ) : (
                       <div className="success-message-small">
                         ✅ Hand detected! Hold your gesture steady...
+                      </div>
+                    )}
+                    
+                    {/* 3D Prediction Info Panel */}
+                    {handedness && (
+                      <div className="info-message-small" style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(0, 102, 255, 0.1)', borderRadius: '8px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.85rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ fontWeight: 'bold' }}>🤚 Hand:</span>
+                            <span style={{ color: handedness === 'Left' ? '#0066FF' : '#00FF00' }}>
+                              {handedness} ({(handednessScore * 100).toFixed(1)}%)
+                            </span>
+                          </div>
+                          {handDepth !== null && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <span style={{ fontWeight: 'bold' }}>📏 Depth (Z):</span>
+                              <span>{handDepth.toFixed(4)}</span>
+                              <span style={{ fontSize: '0.75rem', color: '#666' }}>
+                                {handDepth < -0.1 ? '(Close)' : handDepth > 0.1 ? '(Far)' : '(Medium)'}
+                              </span>
+                            </div>
+                          )}
+                          {worldLandmarks && worldLandmarks.length > 0 && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#666' }}>
+                              <span style={{ fontWeight: 'bold' }}>🌐 3D World:</span>
+                              <span>{worldLandmarks.length} landmarks detected</span>
+                            </div>
+                          )}
+                          {handPoseAnalysis && (
+                            <div style={{ marginTop: '0.5rem', padding: '0.5rem', background: 'rgba(0, 0, 0, 0.05)', borderRadius: '6px', fontSize: '0.75rem' }}>
+                              <div style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>📐 3D Pose Analysis:</div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                                <div>Hand Span: {(handPoseAnalysis.handSpan * 100).toFixed(2)} cm</div>
+                                <div>Avg Extension: {(handPoseAnalysis.avgFingerExtension * 100).toFixed(2)} cm</div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>

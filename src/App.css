@@ -1072,47 +1072,101 @@ h1 {
   margin-bottom: 1.5rem;
 }
 
-/* Webcam Container - Matching MediaPipe example */
+/* Webcam Container - Matching MediaPipe example - Normal size */
 .webcam-container {
   position: relative;
   width: 100%;
   max-width: 640px;
   margin: 0 auto;
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  background: #000;
 }
 
-/* Video element - matching MediaPipe example exactly */
+/* Video element - matching MediaPipe example - Normal size */
 .webcam-video {
   width: 100% !important;
-  height: auto !important;
   display: block !important;
   background: #000 !important;
-  border-radius: 10px;
-  min-height: 300px !important;
-  max-height: 480px;
+  border-radius: 12px;
   object-fit: contain;
   visibility: visible !important;
   opacity: 1 !important;
   transform: rotateY(180deg);
   -webkit-transform: rotateY(180deg);
   -moz-transform: rotateY(180deg);
-  position: relative;
-  z-index: 1;
+  /* No position/z-index needed - canvas overlays with absolute positioning */
 }
 
-/* Canvas overlay - matching MediaPipe example exactly */
+/* Canvas overlay - visible for hand landmarks on webcam */
+/* Match MediaPipe example: canvas mirrors video with same transform */
+/* Canvas dimensions are set by JavaScript to match video */
 .webcam-canvas,
 .output_canvas {
   position: absolute;
   left: 0px;
   top: 0px;
   pointer-events: none;
+  opacity: 1;
+  visibility: visible;
+  z-index: 2;
   transform: rotateY(180deg);
   -webkit-transform: rotateY(180deg);
   -moz-transform: rotateY(180deg);
-  z-index: 2;
+}
+
+/* Hand 3D model preview container - positioned below webcam */
+.hand-model-preview-container {
+  width: 100%;
+  max-width: 640px;
+  margin: 1.5rem auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.hand-model-preview-container h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+  text-align: center;
+}
+
+/* Hand 3D model canvas - mimics hand movement - smaller size */
+.hand-model-canvas {
+  width: 200px;
+  height: 200px;
+  background: rgba(0, 0, 0, 0.9);
+  border: 2px solid rgba(102, 126, 234, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  display: block;
+}
+
+/* Responsive styles for hand model canvas */
+@media (max-width: 768px) {
+  .hand-model-preview-container {
+    margin-top: 1rem;
+    padding: 0.75rem;
+  }
+  
+  .hand-model-canvas {
+    width: 180px;
+    height: 180px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hand-model-canvas {
+    width: 150px;
+    height: 150px;
+  }
 }
 
 
@@ -1172,7 +1226,6 @@ h1 {
   display: block !important;
   z-index: 10;
   background-color: #000 !important;
-  min-height: 300px !important;
 }
 
 /* Recognized Gesture Display */
