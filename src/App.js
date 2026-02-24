@@ -20,6 +20,11 @@ function LearningMode() {
   const [practiceWord, setPracticeWord] = useState(null); // word to spell, e.g. "hello"
   const [wordLetterIndex, setWordLetterIndex] = useState(0); // which letter in the word
   const [wordComplete, setWordComplete] = useState(false); // show "word complete" briefly
+  const [imageErrorLetter, setImageErrorLetter] = useState(null); // letter whose dataset image failed to load
+
+  useEffect(() => {
+    setImageErrorLetter(null);
+  }, [currentLetter]);
 
   // Hand skeleton connections (MediaPipe 21-landmark model) - for reliable overlay drawing
   const HAND_CONNECTIONS = [
@@ -109,6 +114,7 @@ function LearningMode() {
   const webcamRunningRef = useRef(false);
   const hasMovedToNextRef = useRef(false);
   const drawingUtilsRef = useRef(null); // Cache drawing utilities
+  const voiceUserStoppedRef = useRef(false); // true when user clicked Stop voice
 
   // Initialize MediaPipe - Hand Landmarker + Image Embedder (using official example pattern)
   useEffect(() => {
@@ -433,42 +439,30 @@ function LearningMode() {
       };
 
       recognitionRef.current.onend = () => {
-        console.log('🔄 Speech recognition ended, restarting...');
         setIsListening(false);
-        // Always try to restart (for continuous listening)
+        if (voiceUserStoppedRef.current) return;
         setTimeout(() => {
           try {
-            if (recognitionRef.current) {
-              recognitionRef.current.start();
-            }
-          } catch (e) {
-            console.log('Error restarting recognition:', e);
-          }
+            if (recognitionRef.current) recognitionRef.current.start();
+          } catch (e) {}
         }, 500);
       };
 
-      // Start recognition after a delay
       const startRecognition = () => {
+        voiceUserStoppedRef.current = false;
         setTimeout(() => {
           try {
             if (recognitionRef.current) {
               recognitionRef.current.start();
-              console.log('🎤 Starting speech recognition...');
             }
           } catch (e) {
-            console.log('Error starting recognition:', e);
-            // Retry once
             setTimeout(() => {
               try {
-                if (recognitionRef.current) {
-                  recognitionRef.current.start();
-                }
-              } catch (e2) {
-                console.log('Error on retry:', e2);
-              }
+                if (recognitionRef.current) recognitionRef.current.start();
+              } catch (e2) {}
             }, 2000);
           }
-        }, 1000);
+        }, 500);
       };
 
       startRecognition();
@@ -554,6 +548,21 @@ function LearningMode() {
     }
     setHandTrackingActive(false);
     setHandDetected(false);
+  };
+
+  const startListening = () => {
+    voiceUserStoppedRef.current = false;
+    try {
+      if (recognitionRef.current) recognitionRef.current.start();
+    } catch (e) {}
+  };
+
+  const stopListening = () => {
+    voiceUserStoppedRef.current = true;
+    try {
+      if (recognitionRef.current) recognitionRef.current.stop();
+    } catch (e) {}
+    setIsListening(false);
   };
 
   // Hand detection - Matching CodePen gOKBGPN EXACTLY
@@ -815,8 +824,10 @@ function LearningMode() {
     }
   };
 
+  // Use PUBLIC_URL so images work when hosted at root or subpath (e.g. GitHub Pages)
   const getImageUrl = (letter) => {
-    return `/asl_dataset/${letter}/hand1_${letter}_bot_seg_1_cropped.jpeg`;
+    const base = process.env.PUBLIC_URL || '';
+    return `${base}/asl_dataset/${letter}/hand1_${letter}_bot_seg_1_cropped.jpeg`;
   };
 
 
@@ -907,6 +918,28 @@ function LearningMode() {
           <h1>ASL Learning</h1>
           <p className="subtitle">Learn American Sign Language!</p>
           
+          <div className="control-buttons">
+            <button
+              type="button"
+              className={`control-btn ${isListening ? 'active' : ''}`}
+              onClick={isListening ? stopListening : startListening}
+              disabled={!(window.SpeechRecognition || window.webkitSpeechRecognition)}
+              title={isListening ? 'Stop voice' : 'Start voice'}
+            >
+              <span className="control-btn-icon" aria-hidden>{isListening ? 'Mic' : 'Mic'}</span>
+              <span className="control-btn-label">{isListening ? 'Stop voice' : 'Start voice'}</span>
+            </button>
+            <button
+              type="button"
+              className={`control-btn ${handTrackingActive ? 'active' : ''}`}
+              onClick={handTrackingActive ? stopWebcam : startWebcam}
+              disabled={!mediapipeReady}
+              title={handTrackingActive ? 'Stop camera' : 'Start camera'}
+            >
+              <span className="control-btn-icon" aria-hidden>Cam</span>
+              <span className="control-btn-label">{handTrackingActive ? 'Stop camera' : 'Start camera'}</span>
+            </button>
+          </div>
           <div className="status-indicators">
             <div className={`status-indicator ${isListening ? 'active' : 'inactive'}`}>
               <span className="status-icon" aria-hidden>{isListening ? 'Mic' : '—'}</span>
@@ -996,22 +1029,38 @@ function LearningMode() {
                   <h2>{currentLetter.toUpperCase()}</h2>
                 )}
                 {!wordComplete && letters.includes(currentLetter) && (
-                  <img 
-                    src={getImageUrl(currentLetter)} 
-                    alt={`ASL sign for ${currentLetter}`}
-                    className="asl-image"
-                  />
+                  imageErrorLetter === currentLetter ? (
+                    <div className="asl-image-fallback" aria-label={`ASL sign for ${currentLetter}`}>
+                      <span>{currentLetter.toUpperCase()}</span>
+                      <small>Image unavailable</small>
+                    </div>
+                  ) : (
+                    <img 
+                      src={getImageUrl(currentLetter)} 
+                      alt={`ASL sign for ${currentLetter}`}
+                      className="asl-image"
+                      onError={() => setImageErrorLetter(currentLetter)}
+                    />
+                  )
                 )}
               </div>
             </div>
           ) : (
             <div className="current-letter">
               <h2>{currentLetter.toUpperCase()}</h2>
-              <img 
-                src={getImageUrl(currentLetter)} 
-                alt={`ASL sign for ${currentLetter}`}
-                className="asl-image"
-              />
+              {imageErrorLetter === currentLetter ? (
+                <div className="asl-image-fallback" aria-label={`ASL sign for ${currentLetter}`}>
+                  <span>{currentLetter.toUpperCase()}</span>
+                  <small>Image unavailable</small>
+                </div>
+              ) : (
+                <img 
+                  src={getImageUrl(currentLetter)} 
+                  alt={`ASL sign for ${currentLetter}`}
+                  className="asl-image"
+                  onError={() => setImageErrorLetter(currentLetter)}
+                />
+              )}
             </div>
           )}
 

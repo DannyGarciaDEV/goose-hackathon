@@ -36,6 +36,12 @@ npm run build
 
 Output is in the `build` folder.
 
+### Deployment (Netlify, Vercel, GitHub Pages, etc.)
+
+- **Dataset images** — The app loads ASL images from `public/asl_dataset/`. Ensure this folder is committed and deployed so the build includes it. After `npm run build`, check that `build/asl_dataset/` exists.
+- **Root URL** — If the app is served at the site root (e.g. `https://yoursite.com/`), no change is needed. Image paths use `process.env.PUBLIC_URL`, which is empty at root.
+- **Subpath** — If the app is served from a subpath (e.g. `https://user.github.io/asl-app/`), set `"homepage": "https://user.github.io/asl-app"` in `package.json` before building so asset and dataset paths resolve correctly.
+
 ## Voice commands
 
 | Say | Action |

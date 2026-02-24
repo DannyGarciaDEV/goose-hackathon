@@ -3,37 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Learn American Sign Language (ASL) with real-time hand tracking and voice control. Practice letters and spell words with your camera.">
+    <meta name="theme-color" content="#fafafa">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>ASL Learning App</title>
     <style>
         body {
             margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-                sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            background: #fafafa;
         }
-        
         #root {
             min-height: 100vh;
         }
-        
         .loading {
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            font-size: 1.2rem;
+            color: #374151;
+            font-size: 1rem;
         }
     </style>
 </head>
 <body>
     <div id="root">
-        <div class="loading">
-            🤟 Loading ASL Learning App...
-        </div>
+        <div class="loading">Loading…</div>
     </div>
 </body>
 </html>
