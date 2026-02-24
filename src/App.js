@@ -12,17 +12,96 @@ function LearningMode() {
   const [similarityScore, setSimilarityScore] = useState(null);
   const [isClassifying, setIsClassifying] = useState(false);
   const [datasetEmbeddings, setDatasetEmbeddings] = useState({});
-  const [handedness, setHandedness] = useState(null); // Left or Right hand
-  const [handednessScore, setHandednessScore] = useState(null); // Confidence score
-  const [handDepth, setHandDepth] = useState(null); // Average z coordinate
-  const [worldLandmarks, setWorldLandmarks] = useState(null); // 3D world coordinates
-  const [handPoseAnalysis, setHandPoseAnalysis] = useState(null); // 3D pose analysis
+  const [handedness, setHandedness] = useState(null);
+  const [handednessScore, setHandednessScore] = useState(null);
+  const [handDepth, setHandDepth] = useState(null);
+  const [worldLandmarks, setWorldLandmarks] = useState(null);
+  const [handPoseAnalysis, setHandPoseAnalysis] = useState(null);
+  const [practiceWord, setPracticeWord] = useState(null); // word to spell, e.g. "hello"
+  const [wordLetterIndex, setWordLetterIndex] = useState(0); // which letter in the word
+  const [wordComplete, setWordComplete] = useState(false); // show "word complete" briefly
+
+  // Hand skeleton connections (MediaPipe 21-landmark model) - for reliable overlay drawing
+  const HAND_CONNECTIONS = [
+    [0, 1], [1, 2], [2, 3], [3, 4],           // thumb
+    [0, 5], [5, 6], [6, 7], [7, 8],           // index
+    [0, 9], [9, 10], [10, 11], [11, 12],      // middle
+    [0, 13], [13, 14], [14, 15], [15, 16],    // ring
+    [0, 17], [17, 18], [18, 19], [19, 20],    // pinky
+    [5, 9], [9, 13], [13, 17], [17, 0]       // palm
+  ];
+
+  const drawHandOverlay = (ctx, landmarksList, width, height, videoWidth, videoHeight) => {
+    if (!ctx || !landmarksList || landmarksList.length === 0) return;
+    const isNormalized = (l) => (l?.x ?? 0) <= 1.01 && (l?.y ?? 0) <= 1.01;
+    for (const landmarks of landmarksList) {
+      if (!landmarks || landmarks.length < 21) continue;
+      const sample = landmarks[0];
+      const norm = sample && isNormalized(sample);
+      const toX = (l) => {
+        const x = l?.x ?? 0;
+        return norm ? x * width : (videoWidth ? (x / videoWidth) * width : x);
+      };
+      const toY = (l) => {
+        const y = l?.y ?? 0;
+        return norm ? y * height : (videoHeight ? (y / videoHeight) * height : y);
+      };
+      // Use z for 3D-style depth (smaller z = closer to camera in MediaPipe)
+      const zValues = landmarks.map((l) => typeof l?.z === 'number' ? l.z : 0);
+      const minZ = Math.min(...zValues);
+      const maxZ = Math.max(...zValues);
+      const zRange = maxZ - minZ || 1;
+      const depth = (l) => Math.max(0, Math.min(1, 1 - ((l?.z ?? 0) - minZ) / zRange)); // 1 = close, 0 = far
+      // Connectors with depth-based thickness and opacity
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      for (const [i, j] of HAND_CONNECTIONS) {
+        const a = landmarks[i];
+        const b = landmarks[j];
+        if (!a || !b) continue;
+        const d = (depth(a) + depth(b)) / 2;
+        const lineW = 1.5 + d * 4;
+        const alpha = 0.5 + d * 0.5;
+        ctx.strokeStyle = `rgba(0, 220, 120, ${alpha})`;
+        ctx.lineWidth = lineW;
+        ctx.beginPath();
+        ctx.moveTo(toX(a), toY(a));
+        ctx.lineTo(toX(b), toY(b));
+        ctx.stroke();
+        // Soft shadow line (offset by depth) for 3D feel
+        ctx.strokeStyle = `rgba(0, 180, 80, ${alpha * 0.25})`;
+        ctx.lineWidth = lineW + 2;
+        const dx = (depth(a) - 0.5) * 6;
+        const dy = (depth(b) - 0.5) * 6;
+        ctx.beginPath();
+        ctx.moveTo(toX(a) + dx, toY(a) + dy);
+        ctx.lineTo(toX(b) + dx, toY(b) + dy);
+        ctx.stroke();
+      }
+      // Landmark dots: size and opacity by depth
+      for (let i = 0; i < landmarks.length; i++) {
+        const l = landmarks[i];
+        if (!l) continue;
+        const d = depth(l);
+        const r = 2 + d * 5;
+        const alpha = 0.6 + d * 0.4;
+        ctx.fillStyle = `rgba(255, 80, 80, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(toX(l), toY(l), r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = `rgba(255, 200, 200, ${alpha * 0.8})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+  };
 
   const recognitionRef = useRef(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const cornerCanvasRef = useRef(null); // Corner preview canvas for hand landmarks
   const handLandmarkerRef = useRef(null);
+  const lastLandmarksRef = useRef(null); // So we can redraw every frame
   const imageEmbedderRef = useRef(null);
   const lastVideoTimeRef = useRef(-1);
   const runningModeRef = useRef("IMAGE");
@@ -170,21 +249,39 @@ function LearningMode() {
         // Check if approved (27%+ similarity) and move to next letter
         if (similarity > 0.27 && !hasMovedToNextRef.current) {
           hasMovedToNextRef.current = true;
-          console.log(`✅ Approved! Moving to next letter...`);
           
-          // Find current letter index
-          const currentIndex = letters.indexOf(currentLetter);
-          if (currentIndex !== -1 && currentIndex < letters.length - 1) {
-            // Move to next letter after a short delay
-            setTimeout(() => {
-              setCurrentLetter(letters[currentIndex + 1]);
-              setSimilarityScore(null); // Reset similarity score
-              hasMovedToNextRef.current = false; // Reset flag for next letter
-              console.log(`✅ Now learning letter: ${letters[currentIndex + 1].toUpperCase()}`);
-            }, 1500); // 1.5 second delay before moving
+          if (practiceWord) {
+            // Word mode: advance to next letter in the word
+            const nextIndex = wordLetterIndex + 1;
+            if (nextIndex < practiceWord.length) {
+              setTimeout(() => {
+                setWordLetterIndex(nextIndex);
+                setCurrentLetter(practiceWord[nextIndex]);
+                setSimilarityScore(null);
+                hasMovedToNextRef.current = false;
+              }, 1200);
+            } else {
+              setWordComplete(true);
+              setTimeout(() => {
+                setPracticeWord(null);
+                setWordLetterIndex(0);
+                setWordComplete(false);
+                setSimilarityScore(null);
+                hasMovedToNextRef.current = false;
+              }, 2500);
+            }
           } else {
-            // All letters completed!
-            console.log('🎉 All letters completed!');
+            // Alphabet mode: next letter
+            const currentIndex = letters.indexOf(currentLetter);
+            if (currentIndex !== -1 && currentIndex < letters.length - 1) {
+              setTimeout(() => {
+                setCurrentLetter(letters[currentIndex + 1]);
+                setSimilarityScore(null);
+                hasMovedToNextRef.current = false;
+              }, 1500);
+            } else {
+              hasMovedToNextRef.current = false;
+            }
           }
         }
         
@@ -424,20 +521,11 @@ function LearningMode() {
       console.log('Video parent:', video.parentElement);
       console.log('Video in DOM:', document.body.contains(video));
       
-      // Set video styles FIRST
+      // Mirror video so it feels natural; sizing is handled by .webcam-container + CSS
       video.style.cssText = `
-        display: block !important;
         visibility: visible !important;
         opacity: 1 !important;
-        width: 100% !important;
-        height: auto !important;
-        background-color: #000 !important;
-        transform: rotateY(180deg) !important;
-        -webkit-transform: rotateY(180deg) !important;
-        -moz-transform: rotateY(180deg) !important;
-        min-height: 300px !important;
-        position: relative !important;
-        z-index: 1 !important;
+        transform: scaleX(-1);
       `;
       
       console.log('✅ Video styles set');
@@ -492,11 +580,19 @@ function LearningMode() {
       return;
     }
 
-    // Set canvas dimensions (matching MediaPipe example exactly)
-    canvas.style.width = video.videoWidth;
-    canvas.style.height = video.videoHeight;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    // Only resize canvas when video dimensions change (resizing clears the canvas).
+    const needResize = canvas.width !== video.videoWidth || canvas.height !== video.videoHeight;
+    if (needResize) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+    }
+    // Keep canvas display size in sync with video so overlay tracks hand motion 1:1.
+    const displayW = video.clientWidth;
+    const displayH = video.clientHeight;
+    if (displayW && displayH && (canvas.style.width !== `${displayW}px` || canvas.style.height !== `${displayH}px`)) {
+      canvas.style.width = `${displayW}px`;
+      canvas.style.height = `${displayH}px`;
+    }
 
     // Switch to VIDEO mode if needed (matching CodePen)
     if (runningModeRef.current === "IMAGE") {
@@ -571,46 +667,12 @@ function LearningMode() {
           setHandPoseAnalysis(analysis);
         }
 
-        // Use MediaPipe drawing utilities (matching MediaPipe example exactly)
-        if (drawingUtilsRef.current) {
-          const { drawConnectors, drawLandmarks, HAND_CONNECTIONS } = drawingUtilsRef.current;
-          
-          // Verify all utilities are available
-          if (!drawConnectors || !drawLandmarks || !HAND_CONNECTIONS) {
-            console.error('❌ Drawing utilities incomplete:', {
-              drawConnectors: !!drawConnectors,
-              drawLandmarks: !!drawLandmarks,
-              HAND_CONNECTIONS: !!HAND_CONNECTIONS
-            });
-          } else {
-            // Draw for each hand (matching MediaPipe example exactly)
-            for (const landmarks of results.landmarks) {
-              if (landmarks && landmarks.length > 0) {
-                try {
-                  drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {
-                    color: "#00FF00",
-                    lineWidth: 5
-                  });
-                  drawLandmarks(ctx, landmarks, { color: "#FF0000", lineWidth: 2 });
-                } catch (drawError) {
-                  console.error('❌ Error drawing landmarks:', drawError);
-                }
-              }
-            }
-          }
-        } else {
-          console.warn('⚠️ Drawing utilities not loaded yet - trying to load...');
-          // Try to load drawing utilities if not loaded
-          try {
-            const drawingUtils = await import('@mediapipe/drawing_utils');
-            drawingUtilsRef.current = drawingUtils;
-            console.log('✅ Drawing utilities loaded on demand');
-          } catch (loadError) {
-            console.error('❌ Failed to load drawing utilities:', loadError);
-          }
-        }
+        // Draw hand skeleton overlay (manual drawing so it always follows hand motion)
+        lastLandmarksRef.current = results.landmarks;
+        drawHandOverlay(ctx, results.landmarks, canvas.width, canvas.height, video.videoWidth, video.videoHeight);
       } else {
         setHandDetected(false);
+        lastLandmarksRef.current = null;
         // Reset 3D prediction data when hand is lost
         setHandedness(null);
         setHandednessScore(null);
@@ -620,9 +682,17 @@ function LearningMode() {
       }
 
       ctx.restore();
+    } else {
+      // No new video frame: redraw last landmarks so overlay never disappears
+      const last = lastLandmarksRef.current;
+      if (last && last.length > 0) {
+        ctx.save();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawHandOverlay(ctx, last, canvas.width, canvas.height, video.videoWidth, video.videoHeight);
+        ctx.restore();
+      }
     }
 
-    // Continue detection loop (matching CodePen exactly)
     if (webcamRunningRef.current) {
       requestAnimationFrame(detectHands);
     }
@@ -673,6 +743,22 @@ function LearningMode() {
     if (command.includes('stop camera') || command.includes('stop webcam')) {
       stopWebcam();
       return;
+    }
+    
+    // Spell / learn word: "spell hello" or "learn hello" -> practice spelling that word
+    const spellMatch = command.match(/(?:spell|learn)\s+(.+)/);
+    if (spellMatch) {
+      const raw = spellMatch[1].trim().toLowerCase().replace(/\s+/g, '');
+      const word = raw.split('').filter(c => /[a-z]/.test(c)).join('');
+      if (word.length > 0) {
+        setPracticeWord(word);
+        setWordLetterIndex(0);
+        setCurrentLetter(word[0]);
+        setWordComplete(false);
+        setSimilarityScore(null);
+        hasMovedToNextRef.current = false;
+        return;
+      }
     }
     
     // Letter detection - improved pattern matching
@@ -748,17 +834,17 @@ function LearningMode() {
     <div className="app">
       <nav className="navbar">
         <div className="navbar-brand" style={{ cursor: 'default' }}>
-          🤟 ASL Learning
+          ASL Learning
         </div>
         <div className="navbar-controls">
           <div className="voice-status">
-            <span className="voice-icon">{isListening ? '🎤' : '🔇'}</span>
+            <span className="voice-icon" aria-hidden>{isListening ? 'On' : 'Off'}</span>
             <span>{isListening ? 'Voice Active' : 'Voice Inactive'}</span>
           </div>
           {handTrackingActive && (
             <div className="hand-status">
-              <span>🖐️</span>
-              <span>{handDetected ? 'Hand Detected' : 'No Hand'}</span>
+              <span className="hand-icon" aria-hidden>Hand</span>
+              <span>{handDetected ? 'Detected' : 'No hand'}</span>
             </div>
           )}
         </div>
@@ -767,12 +853,12 @@ function LearningMode() {
       {commandsVisible && (
         <div className="voice-commands-panel">
           <div className="commands-header">
-            <h4>🎤 Voice Commands</h4>
+            <h4>Voice commands</h4>
             <button onClick={() => setCommandsVisible(false)}>✕</button>
           </div>
           <div className="commands-content">
             <div className="command-section">
-              <h5>⚙️ Controls</h5>
+              <h5>Controls</h5>
               <div className="command-item">
                 <span className="command-phrase">"hide commands"</span>
                 <span className="command-action">Hide panel</span>
@@ -783,7 +869,7 @@ function LearningMode() {
               </div>
             </div>
             <div className="command-section">
-              <h5>📜 Scroll</h5>
+              <h5>Scroll</h5>
               <div className="command-item">
                 <span className="command-phrase">"scroll down"</span>
                 <span className="command-action">Scroll down</span>
@@ -802,10 +888,14 @@ function LearningMode() {
               </div>
             </div>
             <div className="command-section">
-              <h5>🔤 Letters</h5>
+              <h5>Letters & words</h5>
               <div className="command-item">
                 <span className="command-phrase">"A", "B", "C"...</span>
                 <span className="command-action">Show ASL letter</span>
+              </div>
+              <div className="command-item">
+                <span className="command-phrase">"spell hello" / "learn cat"</span>
+                <span className="command-action">Practice spelling that word</span>
               </div>
             </div>
           </div>
@@ -814,32 +904,24 @@ function LearningMode() {
 
       <div className="container">
         <div className="learning-mode">
-          <h1>🤟 ASL Learning</h1>
+          <h1>ASL Learning</h1>
           <p className="subtitle">Learn American Sign Language!</p>
           
           <div className="status-indicators">
             <div className={`status-indicator ${isListening ? 'active' : 'inactive'}`}>
-              <span className="status-icon">{isListening ? '🎤' : '🔇'}</span>
-              <span className="status-text">{isListening ? 'Voice Active' : 'Voice Inactive'}</span>
+              <span className="status-icon" aria-hidden>{isListening ? 'Mic' : '—'}</span>
+              <span className="status-text">{isListening ? 'Voice active' : 'Voice inactive'}</span>
             </div>
             <div className={`status-indicator ${handTrackingActive ? 'active' : 'inactive'} ${!mediapipeReady ? 'disabled' : ''}`}>
-              <span className="status-icon">{handTrackingActive ? '📷' : '📷'}</span>
-              <span className="status-text">{handTrackingActive ? 'Camera Active' : 'Camera Inactive'}</span>
+              <span className="status-icon" aria-hidden>Cam</span>
+              <span className="status-text">{handTrackingActive ? 'Camera active' : 'Camera inactive'}</span>
             </div>
           </div>
 
           {handTrackingActive ? (
             <div className="split-view">
-              <div className="current-letter">
-                <h2>Target: {currentLetter.toUpperCase()}</h2>
-                <img 
-                  src={getImageUrl(currentLetter)} 
-                  alt={`ASL sign for ${currentLetter}`}
-                  className="asl-image"
-                />
-              </div>
               <div className="webcam-preview">
-                <h3>Your Hand</h3>
+                <h3>Hand tracking</h3>
                 <div className="webcam-container">
                   <video
                     ref={videoRef}
@@ -853,6 +935,7 @@ function LearningMode() {
                     ref={canvasRef}
                     id="output_canvas"
                     className="webcam-canvas output_canvas"
+                    aria-hidden
                   />
                 </div>
                 {/* Hand landmarks are now drawn directly on the webcam canvas */}
@@ -860,12 +943,12 @@ function LearningMode() {
                   <div className="classification-feedback">
                     {isClassifying ? (
                       <div className="info-message-small">
-                        🔍 Analyzing your gesture...
+                        Analyzing your gesture…
                       </div>
                     ) : similarityScore !== null ? (
                       <div className={`similarity-score ${similarityScore > 0.27 ? 'high' : similarityScore > 0.2 ? 'medium' : 'low'}`}>
                         <div className="similarity-label">
-                          {similarityScore > 0.27 ? '✅ Good enough! Approved!' : similarityScore > 0.2 ? '⚠️ Getting close' : '❌ Try again'}
+                          {similarityScore > 0.27 ? 'Match — approved' : similarityScore > 0.2 ? 'Getting close' : 'Try again'}
                         </div>
                         <div className="similarity-bar">
                           <div 
@@ -876,16 +959,16 @@ function LearningMode() {
                       </div>
                     ) : (
                       <div className="success-message-small">
-                        ✅ Hand detected! Hold your gesture steady...
+                        Hand detected. Hold your gesture steady.
                       </div>
                     )}
                     
                     {/* 3D Prediction Info Panel */}
                     {handedness && (
-                      <div className="info-message-small" style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(0, 102, 255, 0.1)', borderRadius: '8px' }}>
+                      <div className="info-message-small" style={{ marginTop: '0.5rem', padding: '0.75rem', background: '#f3f4f6', borderRadius: '8px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.85rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span style={{ fontWeight: 'bold' }}>🤚 Hand:</span>
+                            <span style={{ fontWeight: 'bold' }}>Hand:</span>
                             <span style={{ color: handedness === 'Left' ? '#0066FF' : '#00FF00' }}>
                               {handedness} ({(handednessScore * 100).toFixed(1)}%)
                             </span>
@@ -896,8 +979,28 @@ function LearningMode() {
                   </div>
                 ) : (
                   <div className="info-message-small">
-                    👋 Show your hand to the camera
+                    Show your hand in view of the camera
                   </div>
+                )}
+              </div>
+              <div className="current-letter">
+                {practiceWord ? (
+                  <>
+                    <p className="practice-word-label">Spelling: <strong>{practiceWord}</strong></p>
+                    <p className="practice-word-progress">Letter {wordLetterIndex + 1} of {practiceWord.length}</p>
+                    <h2>{currentLetter.toUpperCase()}</h2>
+                  </>
+                ) : wordComplete ? (
+                  <p className="word-complete-message">Word complete.</p>
+                ) : (
+                  <h2>{currentLetter.toUpperCase()}</h2>
+                )}
+                {!wordComplete && letters.includes(currentLetter) && (
+                  <img 
+                    src={getImageUrl(currentLetter)} 
+                    alt={`ASL sign for ${currentLetter}`}
+                    className="asl-image"
+                  />
                 )}
               </div>
             </div>
@@ -914,21 +1017,21 @@ function LearningMode() {
 
           {!mediapipeReady && (
             <div className="info-message">
-              <p>⏳ Loading hand tracking...</p>
+              <p>Loading hand tracking…</p>
             </div>
           )}
 
           <div className="instructions">
-            <h3>🎤 Voice Commands:</h3>
-            <p>Say any letter to see its ASL sign!</p>
-            <p><strong>📜 Scroll Commands:</strong></p>
+            <h3>Voice commands</h3>
+            <p>Say any letter to see its ASL sign. Say &quot;spell [word]&quot; or &quot;learn [word]&quot; to practice spelling.</p>
+            <p><strong>Scroll</strong></p>
             <ul>
               <li><strong>"scroll down"</strong> or <strong>"page down"</strong>: Scroll down</li>
               <li><strong>"scroll up"</strong> or <strong>"page up"</strong>: Scroll up</li>
               <li><strong>"scroll to top"</strong> or <strong>"go to top"</strong>: Jump to top</li>
               <li><strong>"scroll to bottom"</strong> or <strong>"go to bottom"</strong>: Jump to bottom</li>
             </ul>
-            <p><strong>💡 Tips:</strong></p>
+            <p><strong>Tips</strong></p>
             <ul>
               <li>Allow microphone and webcam permissions</li>
               <li>Use Chrome or Edge for best results</li>
