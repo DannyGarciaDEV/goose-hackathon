@@ -1,139 +1,86 @@
-# 🤟 ASL Learning App
+# ASL Learning App
 
-A React-based American Sign Language learning application with voice recognition capabilities.
-
-https://asl-learning.netlify.app/
+A web app for learning American Sign Language (ASL) with real-time hand tracking and voice control. Practice letters and spell words while the app recognizes your hand shapes via the camera.
 
 ## Features
 
-- **🎤 Voice Recognition**: Control the app entirely with your voice
-- **📚 Letter Learning**: Learn ASL letters with visual examples
-- **📱 Responsive Design**: Works on desktop, tablet, and mobile
-- **🔄 Real-time Updates**: Smooth React state management
-- **🎨 Modern UI**: Clean interface with floating commands panel
+- **Hand tracking** — Camera-based hand detection with a 3D-style skeleton overlay (green lines and red joints) that follows your hand in real time
+- **Letter practice** — See the target letter and its ASL image; sign in front of the camera to get match feedback
+- **Word spelling** — Say “spell hello” or “learn cat” to practice spelling a word letter by letter with hand recognition
+- **Voice commands** — Control the app by voice: letters, scroll, camera on/off, and spelling mode
+- **Responsive layout** — Works on desktop and mobile; camera and target letter are arranged for clear practice
 
-## Voice Commands
-
-### Letter Navigation
-- Say **"A"**, **"B"**, **"C"**, etc. → Jump to specific letter
-- Say **"ay"**, **"bee"**, **"see"**, etc. → Alternative pronunciations
-
-### App Controls
-- Say **"hide commands"** → Hide voice commands panel
-- Say **"show commands"** → Show voice commands panel
-
-### Voice Recognition
-- Voice recognition starts automatically when the app loads
-- Click the voice button to manually start/stop voice recognition
-
-## Getting Started
+## How to run
 
 ### Prerequisites
-- Node.js (version 14 or higher)
-- npm or yarn
-- A modern browser with microphone access (Chrome recommended)
 
-### Installation
+- Node.js 14+
+- A browser with camera and microphone (Chrome or Edge recommended)
 
-1. Clone the repository:
+### Setup
+
 ```bash
 git clone <repository-url>
 cd asl_learning_app
-```
-
-2. Install dependencies:
-```bash
 npm install
-```
-
-3. Start the development server:
-```bash
 npm start
 ```
 
-4. Open your browser and navigate to `http://localhost:3000`
+Open [http://localhost:3000](http://localhost:3000) and allow camera and microphone when prompted.
 
-5. Allow microphone access when prompted
+### Build for production
 
-## Usage
+```bash
+npm run build
+```
 
-1. **Allow Microphone Access**: The app will request microphone permission for voice recognition
-2. **Voice Recognition**: The app auto-starts voice recognition after loading
-3. **Learning**: Say letters to see their ASL signs
-4. **Commands Panel**: Use the floating voice commands panel for reference
-5. **Voice Control**: Click the voice button to manually control voice recognition
+Output is in the `build` folder.
 
-## Browser Compatibility
+## Voice commands
 
-- **Chrome**: Full support (recommended)
-- **Edge**: Full support
-- **Firefox**: Limited voice recognition support
-- **Safari**: Limited voice recognition support
+| Say | Action |
+|-----|--------|
+| **"start camera"** / **"camera"** | Turn on webcam and hand tracking |
+| **"stop camera"** | Turn off webcam |
+| **"A"**, **"B"**, … **"Z"** | Jump to that letter and show its ASL sign |
+| **"spell hello"** / **"learn cat"** | Practice spelling that word letter by letter |
+| **"scroll down"** / **"scroll up"** | Scroll the page |
+| **"scroll to top"** / **"scroll to bottom"** | Jump to top or bottom |
+| **"hide commands"** / **"show commands"** | Hide or show the voice commands panel |
 
-## Project Structure
+## How it works
+
+- **MediaPipe Hand Landmarker** — Detects hands and 21 landmarks per hand; the overlay uses depth (z) so closer parts look thicker and brighter.
+- **Image embedder** — Compares your hand pose to reference ASL images to give “match” feedback when your sign is close enough.
+- **Web Speech API** — Listens for voice commands so you can keep your hands free for signing.
+
+## Project structure
 
 ```
 asl_learning_app/
 ├── public/
 │   ├── index.html
-│   └── asl_dataset/          # ASL sign images
+│   └── asl_dataset/     # ASL letter images
 ├── src/
-│   ├── App.js               # Main React component
-│   ├── App.css              # Styles
-│   └── index.js             # React entry point
+│   ├── App.js           # Main component (hand tracking, voice, spelling)
+│   ├── App.css          # Styles
+│   └── index.js         # Entry point
 ├── package.json
 └── README.md
 ```
 
-## Technologies Used
+## Tech stack
 
-- **React 18**: Modern React with hooks
-- **Web Speech API**: Browser voice recognition
-- **CSS3**: Modern styling with gradients and animations
-- **HTML5**: Semantic markup
+- React 18
+- MediaPipe Tasks Vision (Hand Landmarker + Image Embedder)
+- Web Speech API
+- No backend required; runs fully in the browser
 
-## Development
+## Browser support
 
-### Available Scripts
-
-- `npm start`: Start development server
-- `npm run build`: Build for production
-- `npm test`: Run tests
-- `npm run eject`: Eject from Create React App
-
-## Deployment
-
-### Netlify Deployment
-
-1. **Build Settings:**
-   - Build command: `npm run build`
-   - Publish directory: `build`
-   - Node version: `18` (or `16`)
-
-2. **Deploy Steps:**
-   - Connect your GitHub repository to Netlify
-   - Set the build settings above
-   - Deploy automatically on git push
-
-3. **Important Notes:**
-   - Voice recognition requires HTTPS (Netlify provides this)
-   - Users must allow microphone access
-   - Chrome/Edge browsers work best
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+- **Chrome / Edge** — Full support (recommended)
+- **Firefox / Safari** — Voice recognition may be limited; hand tracking should work
 
 ## License
 
-This project is open source and available under the MIT License.
-
-## Acknowledgments
-
-- ASL dataset images for learning materials
-- Web Speech API for voice recognition capabilities
-- React community for excellent documentation and tools
+MIT.
