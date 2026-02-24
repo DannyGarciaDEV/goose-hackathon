@@ -926,7 +926,6 @@ function LearningMode() {
               disabled={!(window.SpeechRecognition || window.webkitSpeechRecognition)}
               title={isListening ? 'Stop voice' : 'Start voice'}
             >
-              <span className="control-btn-icon" aria-hidden>{isListening ? 'Mic' : 'Mic'}</span>
               <span className="control-btn-label">{isListening ? 'Stop voice' : 'Start voice'}</span>
             </button>
             <button
@@ -936,19 +935,8 @@ function LearningMode() {
               disabled={!mediapipeReady}
               title={handTrackingActive ? 'Stop camera' : 'Start camera'}
             >
-              <span className="control-btn-icon" aria-hidden>Cam</span>
               <span className="control-btn-label">{handTrackingActive ? 'Stop camera' : 'Start camera'}</span>
             </button>
-          </div>
-          <div className="status-indicators">
-            <div className={`status-indicator ${isListening ? 'active' : 'inactive'}`}>
-              <span className="status-icon" aria-hidden>{isListening ? 'Mic' : '—'}</span>
-              <span className="status-text">{isListening ? 'Voice active' : 'Voice inactive'}</span>
-            </div>
-            <div className={`status-indicator ${handTrackingActive ? 'active' : 'inactive'} ${!mediapipeReady ? 'disabled' : ''}`}>
-              <span className="status-icon" aria-hidden>Cam</span>
-              <span className="status-text">{handTrackingActive ? 'Camera active' : 'Camera inactive'}</span>
-            </div>
           </div>
 
           {handTrackingActive ? (
